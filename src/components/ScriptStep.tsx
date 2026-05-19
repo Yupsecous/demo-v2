@@ -4,6 +4,7 @@ import { llmService } from '../services/llmService';
 import { computeStepHash } from '../services/stepHash';
 import { VoicePicker } from './VoicePicker';
 import { CacheRestorePill } from './CacheRestorePill';
+import { InlineError } from './InlineError';
 import { resolveVoice } from '../data/voiceLibrary';
 import {
   copyVariantsOf,
@@ -117,21 +118,7 @@ function ScriptCard({
   );
 }
 
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="rounded-md border border-red-200 bg-red-50 p-4">
-      <p className="text-sm font-medium text-red-800">Generation failed</p>
-      <p className="mt-1 text-sm text-red-700">{message}</p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="mt-3 rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100"
-      >
-        Retry
-      </button>
-    </div>
-  );
-}
+// ErrorBanner replaced by shared <InlineError /> with plain-language strings.
 
 function HistoryPanel({ history }: { history: RefineEntry[] }) {
   if (history.length === 0) return null;
@@ -199,7 +186,7 @@ export function ScriptStep() {
   const variants = scriptVariantsOf(step.variants);
 
   const [loading, setLoading] = useState<LoadOp>(null);
-  const [errorState, setErrorState] = useState<{ op: LoadOp; message: string } | null>(null);
+  const [errorState, setErrorState] = useState<{ op: LoadOp; error: unknown } | null>(null);
   const [refineText, setRefineText] = useState('');
   const initialAttemptedRef = useRef(false);
 
@@ -228,7 +215,7 @@ export function ScriptStep() {
       addHistoryEntry('script', makeGenerationEntry('initial', null, next.length));
       setStepStatus('script', 'options');
     } catch (err) {
-      setErrorState({ op: 'initial', message: err instanceof Error ? err.message : String(err) });
+      setErrorState({ op: 'initial', error: err });
     } finally {
       setLoading(null);
     }
@@ -250,7 +237,7 @@ export function ScriptStep() {
       appendVariants('script', next);
       addHistoryEntry('script', makeGenerationEntry('more', null, next.length));
     } catch (err) {
-      setErrorState({ op: 'more', message: err instanceof Error ? err.message : String(err) });
+      setErrorState({ op: 'more', error: err });
     } finally {
       setLoading(null);
     }
@@ -278,7 +265,7 @@ export function ScriptStep() {
       setStepStatus('script', 'options');
       setRefineText('');
     } catch (err) {
-      setErrorState({ op: 'refine', message: err instanceof Error ? err.message : String(err) });
+      setErrorState({ op: 'refine', error: err });
       setStepStatus('script', 'options');
     } finally {
       setLoading(null);
@@ -393,8 +380,8 @@ export function ScriptStep() {
       ) : (
         <>
           {errorState && errorState.op === 'initial' && (
-            <ErrorBanner
-              message={errorState.message}
+            <InlineError
+              error={errorState.error}
               onRetry={() => {
                 initialAttemptedRef.current = false;
                 void runInitial();
@@ -427,8 +414,8 @@ export function ScriptStep() {
           {variants.length > 0 && (
             <>
               {errorState && errorState.op !== 'initial' && (
-                <ErrorBanner
-                  message={errorState.message}
+                <InlineError
+                  error={errorState.error}
                   onRetry={() => {
                     if (errorState.op === 'more') void runMore();
                     if (errorState.op === 'refine') void runRefine();

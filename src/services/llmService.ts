@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { chatCompletionsJson } from './openaiClient';
+import { messagesJson } from './anthropicClient';
+import { AppError } from './errorMessages';
 import { translateDirection } from './translator';
 import { buildImagePrompt } from './imagePromptBuilder';
 import type {
@@ -34,7 +36,10 @@ export type GenerateScriptArgs = {
 };
 
 export type GenerateCopyArgs = {
-  apiKey: string;
+  // OpenAI is always required (translator). Anthropic is optional —
+  // when present the actual copy generation step routes through Claude
+  // Sonnet for higher-quality variants; without it, falls back to 4o-mini.
+  apiKeys: { openai: string; anthropic?: string };
   brief: Brief;
   previousVariants?: CopyVariant[];
   refineDirection?: string;
@@ -241,9 +246,10 @@ function buildCopyUserMessage(args: {
 }
 
 async function generateCopy(args: GenerateCopyArgs): Promise<CopyVariant[]> {
-  const apiKey = args.apiKey.trim();
+  const apiKey = args.apiKeys.openai.trim();
+  const anthropicKey = args.apiKeys.anthropic?.trim() ?? '';
   if (!apiKey) {
-    throw new Error('OpenAI API key is required. Open Settings to add one.');
+    throw new AppError('openai/missing-key');
   }
   const count = args.count ?? 2;
   const rawDirection = args.refineDirection?.trim();
@@ -259,7 +265,7 @@ async function generateCopy(args: GenerateCopyArgs): Promise<CopyVariant[]> {
       apiKey,
     });
     if (result.kind !== 'copy') {
-      throw new Error('Translator returned non-copy mods for a copy refinement.');
+      throw new AppError('translator/wrong-shape', 'expected copy mods');
     }
     enriched = result.mods.enrichedDirection;
     emphasize = result.mods.emphasize;
@@ -279,19 +285,36 @@ async function generateCopy(args: GenerateCopyArgs): Promise<CopyVariant[]> {
     count,
   });
 
-  const raw = await chatCompletionsJson({
-    apiKey,
-    system: systemPrompt,
-    user: userMessage,
-    schemaName: 'copy_variants',
-    schema: COPY_RESPONSE_SCHEMA as unknown as Record<string, unknown>,
-    temperature: 0.85,
-    maxTokens: 1000,
-  });
+  // Route through Claude Sonnet when an Anthropic key is configured —
+  // creative ad copy is the one place where the quality lift justifies
+  // the model swap. Translator and prompt builder stay on 4o-mini.
+  const raw = anthropicKey
+    ? await messagesJson({
+        apiKey: anthropicKey,
+        systemPrompt,
+        userMessage,
+        toolName: 'submit_copy_variants',
+        toolDescription:
+          'Submit the generated copy variants as a structured array. Each variant has a headline (6-10 words), a caption (2-3 sentences in Meta/Instagram register), and a CTA (3-5 words).',
+        inputSchema: COPY_RESPONSE_SCHEMA as unknown as Record<string, unknown>,
+        maxTokens: 1500,
+      })
+    : await chatCompletionsJson({
+        apiKey,
+        system: systemPrompt,
+        user: userMessage,
+        schemaName: 'copy_variants',
+        schema: COPY_RESPONSE_SCHEMA as unknown as Record<string, unknown>,
+        temperature: 0.85,
+        maxTokens: 1000,
+      });
 
   const result = CopyResponseZ.safeParse(raw);
   if (!result.success) {
-    throw new Error(`OpenAI output did not match the expected schema: ${result.error.message}`);
+    throw new AppError(
+      anthropicKey ? 'anthropic/bad-response' : 'openai/bad-response',
+      `copy schema mismatch: ${result.error.message}`,
+    );
   }
 
   const now = Date.now();
@@ -318,7 +341,7 @@ const FalImageZ = z.object({
 async function generateFluxImage(args: { prompt: string; falKey: string }): Promise<string> {
   const apiKey = args.falKey.trim();
   if (!apiKey) {
-    throw new Error('fal.ai API key is required. Open Settings to add one.');
+    throw new AppError('fal/missing-key');
   }
 
   let res: Response;
@@ -338,32 +361,26 @@ async function generateFluxImage(args: { prompt: string; falKey: string }): Prom
       }),
     });
   } catch (err) {
-    throw new Error(
-      `Network error reaching fal.ai: ${err instanceof Error ? err.message : 'unknown'}`,
-    );
+    throw new AppError('fal/network', err instanceof Error ? err.message : 'fetch failed');
   }
 
   if (!res.ok) {
-    if (res.status === 401) {
-      throw new Error('fal.ai rejected the API key (401). Re-check it in Settings.');
-    }
-    if (res.status === 429) {
-      throw new Error('fal.ai rate limit hit (429). Wait 10 seconds and try again.');
-    }
+    if (res.status === 401) throw new AppError('fal/auth-failed');
+    if (res.status === 429) throw new AppError('fal/rate-limit');
     const text = await res.text().catch(() => '');
-    throw new Error(`fal.ai request failed (${res.status})${text ? `: ${text.slice(0, 200)}` : ''}`);
+    throw new AppError('fal/bad-response', `status ${res.status}: ${text.slice(0, 200)}`);
   }
 
   let body: unknown;
   try {
     body = await res.json();
   } catch {
-    throw new Error('fal.ai response was not valid JSON.');
+    throw new AppError('fal/bad-response', 'response was not valid JSON');
   }
 
   const parsed = FalImageZ.safeParse(body);
   if (!parsed.success) {
-    throw new Error(`fal.ai response did not include an image URL: ${parsed.error.message}`);
+    throw new AppError('fal/bad-response', `image schema mismatch: ${parsed.error.message}`);
   }
   return parsed.data.images[0]!.url;
 }
@@ -371,12 +388,8 @@ async function generateFluxImage(args: { prompt: string; falKey: string }): Prom
 async function generateImages(args: GenerateImagesArgs): Promise<ImageVariant[]> {
   const openai = args.apiKeys.openai.trim();
   const fal = args.apiKeys.fal.trim();
-  if (!openai) {
-    throw new Error('OpenAI API key is required. Open Settings to add one.');
-  }
-  if (!fal) {
-    throw new Error('fal.ai API key is required. Open Settings to add one.');
-  }
+  if (!openai) throw new AppError('openai/missing-key');
+  if (!fal) throw new AppError('fal/missing-key');
 
   const count = args.count ?? 2;
   const rawDirection = args.refineDirection?.trim();
@@ -389,7 +402,7 @@ async function generateImages(args: GenerateImagesArgs): Promise<ImageVariant[]>
       apiKey: openai,
     });
     if (result.kind !== 'image') {
-      throw new Error('Translator returned non-image mods for an image refinement.');
+      throw new AppError('translator/wrong-shape', 'expected image mods');
     }
     mods = result.mods;
   }
@@ -426,7 +439,7 @@ async function generateImages(args: GenerateImagesArgs): Promise<ImageVariant[]>
   }
 
   if (successes.length === 0) {
-    throw new Error(failures[0] ?? 'All image generations failed.');
+    throw new AppError('image/all-failed', failures.join(' | '));
   }
   if (failures.length > 0) {
     // partial success — surface to the console so the user can see what fell through
@@ -598,9 +611,7 @@ function buildScriptUserMessage(args: {
 
 async function generateScript(args: GenerateScriptArgs): Promise<ScriptVariant[]> {
   const apiKey = args.apiKey.trim();
-  if (!apiKey) {
-    throw new Error('OpenAI API key is required. Open Settings to add one.');
-  }
+  if (!apiKey) throw new AppError('openai/missing-key');
   const count = args.count ?? 2;
   const rawDirection = args.refineDirection?.trim();
 
@@ -613,7 +624,7 @@ async function generateScript(args: GenerateScriptArgs): Promise<ScriptVariant[]
       apiKey,
     });
     if (result.kind !== 'voice') {
-      throw new Error('Translator returned non-voice mods for a script refinement.');
+      throw new AppError('translator/wrong-shape', 'expected voice mods');
     }
     mods = result.mods;
     enrichedDirection = result.mods.scriptTone;
@@ -640,7 +651,7 @@ async function generateScript(args: GenerateScriptArgs): Promise<ScriptVariant[]
 
   const result = ScriptResponseZ.safeParse(raw);
   if (!result.success) {
-    throw new Error(`OpenAI output did not match the expected schema: ${result.error.message}`);
+    throw new AppError('openai/bad-response', `script schema mismatch: ${result.error.message}`);
   }
 
   const now = Date.now();

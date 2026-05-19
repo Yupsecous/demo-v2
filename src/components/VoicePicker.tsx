@@ -139,7 +139,7 @@ export function VoicePicker({
         setPlayingId(null);
         setCardErrors((e) => ({
           ...e,
-          [voice.id]: 'Sample failed to load. Run "npm run record-voices" first.',
+          [voice.id]: "Preview couldn't load. You can still select this voice — the final render will use it.",
         }));
       });
       audioRef.current = a;
@@ -157,7 +157,7 @@ export function VoicePicker({
         setPlayingId(null);
         setCardErrors((e) => ({
           ...e,
-          [voice.id]: 'Sample failed to load. Run "npm run record-voices" first.',
+          [voice.id]: "Preview couldn't load. You can still select this voice — the final render will use it.",
         }));
       });
   }
@@ -212,14 +212,9 @@ export function VoicePicker({
       )}
 
       {source === 'hardcoded' && libraryReady === false && (
-        <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          <p className="font-medium">Voice library samples not recorded yet.</p>
-          <p className="mt-1">
-            Run <code className="font-mono">npm run record-voices</code> once with your ElevenLabs key in{' '}
-            <code className="font-mono">ELEVENLABS_API_KEY</code>. MP3s land in{' '}
-            <code className="font-mono">public/voices/</code> and the demo serves them as static assets.
-            You can still pick a voice without samples — the final render will use it.
-          </p>
+        <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-xs text-neutral-600">
+          Voice previews are loading. If they don&apos;t appear, refresh the page or open Settings to
+          add your ElevenLabs key — the picker will then use your account&apos;s voices directly.
         </div>
       )}
 

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { chatCompletionsJson } from './openaiClient';
+import { AppError } from './errorMessages';
 import type {
   AssetType,
   CopyMods,
@@ -317,7 +318,7 @@ function buildUserMessage(direction: string, currentAsset?: { kind: string; summ
 export async function translateDirection(args: TranslateDirectionArgs): Promise<TranslatorOutput> {
   const direction = args.direction.trim();
   if (!direction) {
-    throw new Error('Direction cannot be empty.');
+    throw new AppError('translator/empty-direction');
   }
   const user = buildUserMessage(direction, args.currentAsset);
 

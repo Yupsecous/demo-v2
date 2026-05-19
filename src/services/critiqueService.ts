@@ -1,3 +1,4 @@
+import { AppError } from './errorMessages';
 import type { Brief, CopyVariant, ImageVariant } from '../types';
 
 export type CritiqueImageArgs = {
@@ -55,7 +56,7 @@ type AnthropicMessage = {
 export async function critiqueImage(args: CritiqueImageArgs): Promise<string> {
   const apiKey = args.apiKey.trim();
   if (!apiKey) {
-    throw new Error('Anthropic API key is required. Open Settings to add one.');
+    throw new AppError('anthropic/missing-key');
   }
 
   let res: Response;
@@ -84,40 +85,31 @@ export async function critiqueImage(args: CritiqueImageArgs): Promise<string> {
       }),
     });
   } catch (err) {
-    throw new Error(
-      `Network error reaching Anthropic: ${err instanceof Error ? err.message : 'unknown'}`,
-    );
+    throw new AppError('anthropic/network', err instanceof Error ? err.message : 'fetch failed');
   }
 
   if (!res.ok) {
-    if (res.status === 401) {
-      throw new Error('Anthropic rejected the API key (401). Re-check it in Settings.');
-    }
-    if (res.status === 403) {
-      throw new Error(
-        'Anthropic returned 403. Confirm the anthropic-dangerous-direct-browser-access header is allowed for this key.',
-      );
+    if (res.status === 401 || res.status === 403) {
+      throw new AppError('anthropic/auth-failed', `status ${res.status}`);
     }
     if (res.status === 429) {
-      throw new Error('Anthropic rate limit hit (429). Wait a few seconds and try again.');
+      throw new AppError('anthropic/rate-limit');
     }
     const text = await res.text().catch(() => '');
-    throw new Error(
-      `Anthropic request failed (${res.status})${text ? `: ${text.slice(0, 200)}` : ''}`,
-    );
+    throw new AppError('anthropic/bad-response', `status ${res.status}: ${text.slice(0, 200)}`);
   }
 
   let body: AnthropicMessage;
   try {
     body = (await res.json()) as AnthropicMessage;
   } catch {
-    throw new Error('Anthropic response was not valid JSON.');
+    throw new AppError('anthropic/bad-response', 'response was not valid JSON');
   }
 
   const textBlock = body.content?.find((c) => c.type === 'text');
   const text = textBlock?.text;
   if (typeof text !== 'string' || text.length === 0) {
-    throw new Error('Anthropic response did not include a text block.');
+    throw new AppError('anthropic/bad-response', 'response missing text block');
   }
   return text.trim();
 }

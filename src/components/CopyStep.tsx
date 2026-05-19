@@ -3,6 +3,7 @@ import { useAppStore } from '../store';
 import { llmService } from '../services/llmService';
 import { computeStepHash } from '../services/stepHash';
 import { CacheRestorePill } from './CacheRestorePill';
+import { InlineError } from './InlineError';
 import {
   copyVariantsOf,
   type CopyVariant,
@@ -99,21 +100,8 @@ function VariantCard({
   );
 }
 
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="rounded-md border border-red-200 bg-red-50 p-4">
-      <p className="text-sm font-medium text-red-800">Generation failed</p>
-      <p className="mt-1 text-sm text-red-700">{message}</p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="mt-3 rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100"
-      >
-        Retry
-      </button>
-    </div>
-  );
-}
+// ErrorBanner replaced by shared <InlineError /> with plain-language
+// strings via humanize().
 
 function HistoryPanel({ history }: { history: RefineEntry[] }) {
   if (history.length === 0) return null;
@@ -151,6 +139,7 @@ function HistoryPanel({ history }: { history: RefineEntry[] }) {
 export function CopyStep() {
   const brief = useAppStore((s) => s.brief);
   const apiKey = useAppStore((s) => s.keys.openai);
+  const anthropicKey = useAppStore((s) => s.keys.anthropic);
   const step = useAppStore((s) => s.steps.copy);
   const setStepStatus = useAppStore((s) => s.setStepStatus);
   const appendVariants = useAppStore((s) => s.appendVariants);
@@ -163,7 +152,7 @@ export function CopyStep() {
   const variants = copyVariantsOf(step.variants);
 
   const [loading, setLoading] = useState<LoadOp>(null);
-  const [errorState, setErrorState] = useState<{ op: LoadOp; message: string } | null>(null);
+  const [errorState, setErrorState] = useState<{ op: LoadOp; error: unknown } | null>(null);
   const [refineText, setRefineText] = useState('');
   const initialAttemptedRef = useRef(false);
 
@@ -171,12 +160,16 @@ export function CopyStep() {
     setErrorState(null);
     setLoading('initial');
     try {
-      const next = await llmService.generateCopy({ apiKey, brief, count: 2 });
+      const next = await llmService.generateCopy({
+        apiKeys: { openai: apiKey, anthropic: anthropicKey },
+        brief,
+        count: 2,
+      });
       appendVariants('copy', next);
       addHistoryEntry('copy', makeHistoryEntry('initial', null, next.length));
       setStepStatus('copy', 'options');
     } catch (err) {
-      setErrorState({ op: 'initial', message: err instanceof Error ? err.message : String(err) });
+      setErrorState({ op: 'initial', error: err });
     } finally {
       setLoading(null);
     }
@@ -187,7 +180,7 @@ export function CopyStep() {
     setLoading('more');
     try {
       const next = await llmService.generateCopy({
-        apiKey,
+        apiKeys: { openai: apiKey, anthropic: anthropicKey },
         brief,
         previousVariants: variants,
         count: 2,
@@ -195,7 +188,7 @@ export function CopyStep() {
       appendVariants('copy', next);
       addHistoryEntry('copy', makeHistoryEntry('more', null, next.length));
     } catch (err) {
-      setErrorState({ op: 'more', message: err instanceof Error ? err.message : String(err) });
+      setErrorState({ op: 'more', error: err });
     } finally {
       setLoading(null);
     }
@@ -209,7 +202,7 @@ export function CopyStep() {
     setStepStatus('copy', 'refining');
     try {
       const next = await llmService.generateCopy({
-        apiKey,
+        apiKeys: { openai: apiKey, anthropic: anthropicKey },
         brief,
         previousVariants: variants,
         refineDirection: direction,
@@ -220,7 +213,7 @@ export function CopyStep() {
       setStepStatus('copy', 'options');
       setRefineText('');
     } catch (err) {
-      setErrorState({ op: 'refine', message: err instanceof Error ? err.message : String(err) });
+      setErrorState({ op: 'refine', error: err });
       setStepStatus('copy', 'options');
     } finally {
       setLoading(null);
@@ -278,9 +271,16 @@ export function CopyStep() {
         </div>
       )}
 
+      {!apiKeyMissing && anthropicKey.trim().length === 0 && (
+        <div className="rounded-md border border-neutral-200 bg-neutral-50 px-4 py-2 text-xs text-neutral-600">
+          Add an Anthropic key in Settings for higher-quality copy generation. The demo still works
+          without it.
+        </div>
+      )}
+
       {errorState && errorState.op === 'initial' && (
-        <ErrorBanner
-          message={errorState.message}
+        <InlineError
+          error={errorState.error}
           onRetry={() => {
             initialAttemptedRef.current = false;
             void runInitial();
@@ -313,8 +313,8 @@ export function CopyStep() {
       {variants.length > 0 && (
         <>
           {errorState && errorState.op !== 'initial' && (
-            <ErrorBanner
-              message={errorState.message}
+            <InlineError
+              error={errorState.error}
               onRetry={() => {
                 if (errorState.op === 'more') void runMore();
                 if (errorState.op === 'refine') void runRefine();

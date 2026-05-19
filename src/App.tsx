@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from './store';
 import { Stepper } from './components/Stepper';
 import { SettingsDrawer } from './components/SettingsDrawer';
 import { BriefForm } from './components/BriefForm';
 import { StepShell } from './components/StepShell';
+import { OnboardingState } from './components/OnboardingState';
 import { TranslatorHarness } from './components/TranslatorHarness';
 import { computeStepHash } from './services/stepHash';
+import { loadSamplePreset, type SamplePreset } from './services/sampleLoader';
 import { STEP_ORDER, type RefineEntry, type StepId } from './types';
 
 function isTestMode(): boolean {
@@ -115,9 +117,40 @@ function DebugPanel() {
 
 export default function App() {
   const briefSubmitted = useAppStore((s) => s.briefSubmitted);
+  const openaiKey = useAppStore((s) => s.keys.openai);
   const openDrawer = useAppStore((s) => s.openDrawer);
   const resetBrief = useAppStore((s) => s.resetBrief);
   const resetSteps = useAppStore((s) => s.resetSteps);
+  const [sample, setSample] = useState<SamplePreset | null>(null);
+  const autoOpenedRef = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadSamplePreset().then((p) => {
+      if (!cancelled) setSample(p);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // First-time auto-open of Settings drawer when the page loads with no
+  // OpenAI key configured. Delay 600ms so the welcome card is visible
+  // first. One-shot per session — sessionStorage-persisted ref means a
+  // user who closes the drawer and refreshes isn't re-pestered.
+  useEffect(() => {
+    if (autoOpenedRef.current) return;
+    if (briefSubmitted) return;
+    if (openaiKey.trim().length > 0) return;
+    const flagKey = 'demo-v2-onboarding-shown';
+    if (typeof window !== 'undefined' && window.sessionStorage.getItem(flagKey)) return;
+    const t = setTimeout(() => {
+      autoOpenedRef.current = true;
+      if (typeof window !== 'undefined') window.sessionStorage.setItem(flagKey, '1');
+      openDrawer();
+    }, 600);
+    return () => clearTimeout(t);
+  }, [briefSubmitted, openaiKey, openDrawer]);
 
   const restart = () => {
     resetBrief();
@@ -132,6 +165,9 @@ export default function App() {
       </>
     );
   }
+
+  const hasOpenaiKey = openaiKey.trim().length > 0;
+  const showOnboarding = !briefSubmitted && !hasOpenaiKey;
 
   return (
     <div className="min-h-full bg-white">
@@ -160,13 +196,21 @@ export default function App() {
             </button>
           </div>
         </div>
-        <div className="mx-auto max-w-5xl px-6 pb-4">
-          <Stepper />
-        </div>
+        {!showOnboarding && (
+          <div className="mx-auto max-w-5xl px-6 pb-4">
+            <Stepper />
+          </div>
+        )}
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-8">
-        {briefSubmitted ? <StepShell /> : <BriefForm />}
+        {showOnboarding ? (
+          <OnboardingState sample={sample} />
+        ) : briefSubmitted ? (
+          <StepShell />
+        ) : (
+          <BriefForm />
+        )}
         <DebugPanel />
       </main>
 

@@ -1,3 +1,5 @@
+import { AppError } from './errorMessages';
+
 export type ChatCompletionsJsonArgs = {
   apiKey: string;
   model?: string;
@@ -12,7 +14,7 @@ export type ChatCompletionsJsonArgs = {
 export async function chatCompletionsJson(args: ChatCompletionsJsonArgs): Promise<unknown> {
   const apiKey = args.apiKey.trim();
   if (!apiKey) {
-    throw new Error('OpenAI API key is required. Open Settings to add one.');
+    throw new AppError('openai/missing-key');
   }
 
   const model = args.model ?? 'gpt-4o-mini';
@@ -46,18 +48,15 @@ export async function chatCompletionsJson(args: ChatCompletionsJsonArgs): Promis
       }),
     });
   } catch (err) {
-    throw new Error(
-      `Network error reaching OpenAI: ${err instanceof Error ? err.message : 'unknown'}`,
-    );
+    throw new AppError('openai/network', err instanceof Error ? err.message : 'fetch failed');
   }
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     const snippet = text.slice(0, 300);
-    if (res.status === 401) {
-      throw new Error('OpenAI rejected the API key (401). Re-check it in Settings.');
-    }
-    throw new Error(`OpenAI request failed (${res.status})${snippet ? `: ${snippet}` : ''}`);
+    if (res.status === 401) throw new AppError('openai/auth-failed', snippet);
+    if (res.status === 429) throw new AppError('openai/rate-limit', snippet);
+    throw new AppError('openai/bad-response', `status ${res.status}: ${snippet}`);
   }
 
   type ChatResponse = { choices?: { message?: { content?: string } }[] };
@@ -65,17 +64,17 @@ export async function chatCompletionsJson(args: ChatCompletionsJsonArgs): Promis
   try {
     body = (await res.json()) as ChatResponse;
   } catch {
-    throw new Error('OpenAI response was not valid JSON.');
+    throw new AppError('openai/bad-response', 'response was not valid JSON');
   }
 
   const content = body.choices?.[0]?.message?.content;
   if (typeof content !== 'string' || content.length === 0) {
-    throw new Error('OpenAI response is missing message content.');
+    throw new AppError('openai/bad-response', 'response missing message content');
   }
 
   try {
     return JSON.parse(content);
   } catch {
-    throw new Error('OpenAI returned non-JSON content despite the JSON schema.');
+    throw new AppError('openai/bad-response', 'content was not valid JSON despite strict schema');
   }
 }

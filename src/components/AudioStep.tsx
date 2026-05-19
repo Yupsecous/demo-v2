@@ -9,6 +9,8 @@ import {
 } from '../services/sampleLoader';
 import { WaveformPlayer } from './WaveformPlayer';
 import { CacheRestorePill } from './CacheRestorePill';
+import { InlineError } from './InlineError';
+import { AppError } from '../services/errorMessages';
 import { resolveVoice } from '../data/voiceLibrary';
 import {
   audioVariantsOf,
@@ -31,21 +33,7 @@ function newId(): string {
   return crypto.randomUUID();
 }
 
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="rounded-md border border-red-200 bg-red-50 p-4">
-      <p className="text-sm font-medium text-red-800">Audio generation failed</p>
-      <p className="mt-1 text-sm text-red-700">{message}</p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="mt-3 rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100"
-      >
-        Retry
-      </button>
-    </div>
-  );
-}
+// ErrorBanner replaced by shared <InlineError /> with plain-language strings.
 
 function HistoryPanel({ history }: { history: RefineEntry[] }) {
   if (history.length === 0) return null;
@@ -98,7 +86,7 @@ export function AudioStep() {
   const variants = audioVariantsOf(step.variants);
   const current = variants[0];
 
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorObj, setErrorObj] = useState<unknown>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [samplePreset, setSamplePreset] = useState<SamplePreset | null>(null);
   const attemptedRef = useRef(false);
@@ -154,11 +142,11 @@ export function AudioStep() {
       // its first audio so the demo doesn't dead-end. Banner makes the
       // substitution explicit.
       if (injectDemoVariant()) return;
-      setErrorMessage('Add your ElevenLabs key in Settings to render audio.');
+      setErrorObj(new AppError('eleven/missing-key'));
       setStepStatus('audio', 'options');
       return;
     }
-    setErrorMessage(null);
+    setErrorObj(null);
     setIsGenerating(true);
     setStepStatus('audio', 'generating');
     const previousDuration = current?.durationSeconds ?? null;
@@ -201,7 +189,7 @@ export function AudioStep() {
       }
       setStepStatus('audio', 'options');
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : String(err));
+      setErrorObj(err);
       setStepStatus('audio', 'options');
     } finally {
       setIsGenerating(false);
@@ -287,8 +275,11 @@ export function AudioStep() {
         </div>
       )}
 
-      {errorMessage && (
-        <ErrorBanner message={errorMessage} onRetry={() => void runGenerate({ regenerate: !!current })} />
+      {errorObj !== null && (
+        <InlineError
+          error={errorObj}
+          onRetry={() => void runGenerate({ regenerate: !!current })}
+        />
       )}
 
       {restoredFromCache && <CacheRestorePill />}

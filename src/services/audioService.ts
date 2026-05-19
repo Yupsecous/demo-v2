@@ -1,3 +1,5 @@
+import { AppError } from './errorMessages';
+
 export type GenerateAudioArgs = {
   script: string;
   voiceId: string;
@@ -14,13 +16,13 @@ const MODEL = 'eleven_turbo_v2_5';
 export async function generateAudio(args: GenerateAudioArgs): Promise<GenerateAudioResult> {
   const apiKey = args.apiKey.trim();
   if (!apiKey) {
-    throw new Error('ElevenLabs API key is required. Open Settings to add one.');
+    throw new AppError('eleven/missing-key');
   }
   if (!args.voiceId) {
-    throw new Error('Voice ID is missing. Pick a voice in the script step first.');
+    throw new AppError('eleven/voice-not-found', 'empty voiceId');
   }
   if (!args.script.trim()) {
-    throw new Error('Script is empty. Pick a script in the script step first.');
+    throw new AppError('eleven/bad-response', 'empty script');
   }
 
   let res: Response;
@@ -42,32 +44,21 @@ export async function generateAudio(args: GenerateAudioArgs): Promise<GenerateAu
       },
     );
   } catch (err) {
-    throw new Error(
-      `Network error reaching ElevenLabs: ${err instanceof Error ? err.message : 'unknown'}`,
-    );
+    throw new AppError('eleven/network', err instanceof Error ? err.message : 'fetch failed');
   }
 
   if (!res.ok) {
-    if (res.status === 401) {
-      throw new Error('ElevenLabs rejected the API key (401). Re-check it in Settings.');
-    }
-    if (res.status === 422) {
-      throw new Error(
-        'ElevenLabs would not accept this voice (422). The voice may not be in your account.',
-      );
-    }
-    if (res.status === 429) {
-      throw new Error('ElevenLabs rate limit hit (429). Wait 10 seconds and try again.');
-    }
+    if (res.status === 401) throw new AppError('eleven/auth-failed');
+    if (res.status === 422) throw new AppError('eleven/voice-not-found');
+    if (res.status === 404) throw new AppError('eleven/voice-not-found');
+    if (res.status === 429) throw new AppError('eleven/rate-limit');
     const text = await res.text().catch(() => '');
-    throw new Error(
-      `ElevenLabs request failed (${res.status})${text ? `: ${text.slice(0, 200)}` : ''}`,
-    );
+    throw new AppError('eleven/bad-response', `status ${res.status}: ${text.slice(0, 200)}`);
   }
 
   const blob = await res.blob();
   if (blob.size === 0) {
-    throw new Error('ElevenLabs returned an empty audio body.');
+    throw new AppError('eleven/bad-response', 'empty audio body');
   }
   const url = URL.createObjectURL(blob);
   return { blob, url };

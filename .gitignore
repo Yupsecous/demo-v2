@@ -10,3 +10,11 @@ tsconfig.tsbuildinfo
 # API keys (sessionStorage state includes the keys field). Never ship these.
 samples/source-state.json
 samples/audio/
+
+# Public voice library MP3s and sample preset assets are tracked. A fresh
+# clone gets a working demo without needing to run record-voices or
+# bake-sample. The recording / bake scripts are owner-only tooling.
+!public/voices/*.mp3
+!public/samples/preset.json
+!public/samples/images/*
+!public/samples/audio/*

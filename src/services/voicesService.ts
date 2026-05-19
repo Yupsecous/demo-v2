@@ -1,3 +1,4 @@
+import { AppError } from './errorMessages';
 import type { VoiceSample } from '../data/voiceLibrary';
 
 type ElevenVoice = {
@@ -40,17 +41,18 @@ function toSample(v: ElevenVoice): VoiceSample {
 
 export async function fetchUserVoices(apiKey: string): Promise<VoiceSample[]> {
   const trimmed = apiKey.trim();
-  if (!trimmed) {
-    throw new Error('ElevenLabs API key required.');
+  if (!trimmed) throw new AppError('eleven/missing-key');
+  let res: Response;
+  try {
+    res = await fetch('https://api.elevenlabs.io/v1/voices', {
+      headers: { 'xi-api-key': trimmed },
+    });
+  } catch (err) {
+    throw new AppError('eleven/network', err instanceof Error ? err.message : 'fetch failed');
   }
-  const res = await fetch('https://api.elevenlabs.io/v1/voices', {
-    headers: { 'xi-api-key': trimmed },
-  });
   if (!res.ok) {
-    if (res.status === 401) {
-      throw new Error('ElevenLabs rejected the key (401).');
-    }
-    throw new Error(`ElevenLabs voices request failed (${res.status}).`);
+    if (res.status === 401) throw new AppError('eleven/auth-failed');
+    throw new AppError('eleven/bad-response', `status ${res.status}`);
   }
   const body = (await res.json()) as VoicesResponse;
   const voices = body.voices ?? [];

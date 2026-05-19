@@ -4,6 +4,7 @@ import { llmService } from '../services/llmService';
 import { critiqueImage } from '../services/critiqueService';
 import { computeStepHash } from '../services/stepHash';
 import { CacheRestorePill } from './CacheRestorePill';
+import { InlineError } from './InlineError';
 import {
   copyVariantsOf,
   imageVariantsOf,
@@ -238,21 +239,7 @@ function VariantCard({
   );
 }
 
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="rounded-md border border-red-200 bg-red-50 p-4">
-      <p className="text-sm font-medium text-red-800">Generation failed</p>
-      <p className="mt-1 text-sm text-red-700">{message}</p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="mt-3 rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100"
-      >
-        Retry
-      </button>
-    </div>
-  );
-}
+// ErrorBanner replaced by shared <InlineError /> with plain-language strings.
 
 function HistoryPanel({ history }: { history: RefineEntry[] }) {
   if (history.length === 0) return null;
@@ -324,7 +311,7 @@ export function ImageStep() {
   const variants = imageVariantsOf(step.variants);
 
   const [loading, setLoading] = useState<LoadOp>(null);
-  const [errorState, setErrorState] = useState<{ op: LoadOp; message: string } | null>(null);
+  const [errorState, setErrorState] = useState<{ op: LoadOp; error: unknown } | null>(null);
   const [refineText, setRefineText] = useState('');
   const initialAttemptedRef = useRef(false);
 
@@ -348,7 +335,7 @@ export function ImageStep() {
       addHistoryEntry('image', makeHistoryEntry('initial', null, next.length));
       setStepStatus('image', 'options');
     } catch (err) {
-      setErrorState({ op: 'initial', message: err instanceof Error ? err.message : String(err) });
+      setErrorState({ op: 'initial', error: err });
     } finally {
       setLoading(null);
     }
@@ -369,7 +356,7 @@ export function ImageStep() {
       appendVariants('image', next);
       addHistoryEntry('image', makeHistoryEntry('more', null, next.length));
     } catch (err) {
-      setErrorState({ op: 'more', message: err instanceof Error ? err.message : String(err) });
+      setErrorState({ op: 'more', error: err });
     } finally {
       setLoading(null);
     }
@@ -399,7 +386,7 @@ export function ImageStep() {
       setStepStatus('image', 'options');
       if (!directionText) setRefineText('');
     } catch (err) {
-      setErrorState({ op: 'refine', message: err instanceof Error ? err.message : String(err) });
+      setErrorState({ op: 'refine', error: err });
       setStepStatus('image', 'options');
     } finally {
       setLoading(null);
@@ -494,8 +481,8 @@ export function ImageStep() {
       )}
 
       {errorState && errorState.op === 'initial' && (
-        <ErrorBanner
-          message={errorState.message}
+        <InlineError
+          error={errorState.error}
           onRetry={() => {
             initialAttemptedRef.current = false;
             void runInitial();
@@ -533,8 +520,8 @@ export function ImageStep() {
       {variants.length > 0 && (
         <>
           {errorState && errorState.op !== 'initial' && (
-            <ErrorBanner
-              message={errorState.message}
+            <InlineError
+              error={errorState.error}
               onRetry={() => {
                 if (errorState.op === 'more') void runMore();
                 if (errorState.op === 'refine') void runRefine();
