@@ -19,6 +19,7 @@ Front end runtime
 Build tools
 
 - TypeScript 5
+- Vitest for unit tests
 - tsx for running Node scripts in TypeScript without a build step
 
 Browser libraries
@@ -29,8 +30,8 @@ Browser libraries
 
 External APIs called directly from the browser
 
-- OpenAI Chat Completions for copy, script, image prompt builder, and the direction translator
-- Anthropic Messages for the optional image critique with vision
+- OpenAI Chat Completions for script generation, image prompt builder, and the direction translator
+- Anthropic Messages for image critique with vision, and (optionally) for higher-quality copy generation via Claude Sonnet
 - fal.ai for Flux Schnell image generation
 - ElevenLabs for the final voice rendering
 
@@ -46,7 +47,7 @@ fal.ai. Used for image generation. Without it the image step fails. Get a key at
 
 ElevenLabs. Used for the final voice render and for the optional voice-library prerecording script. Without it the audio step fails unless the sample preset has been baked, in which case it falls back to demo audio. Get a key at https://elevenlabs.io/app/settings/api-keys.
 
-Anthropic. Used only for the optional image critique. Without it the Critique button on each image variant is disabled with an inline hint. Rest of the demo works. Get a key at https://console.anthropic.com/settings/keys.
+Anthropic. Two roles. Without it the Critique button on each image variant is disabled with an inline hint, and copy generation falls back to gpt-4o-mini. With it, copy generation routes through Claude Sonnet for noticeably higher-quality variants, and image critique is available. Get a key at https://console.anthropic.com/settings/keys.
 
 Keys live in the visitor's browser sessionStorage. They are cleared when the tab closes. They are not transmitted to any server other than the four providers above. They are not bundled into source code or environment variables shipped to end users. Every visitor enters their own keys. The demo owner does not pay for visitor usage.
 
@@ -61,7 +62,7 @@ npm install
 npm run dev
 ```
 
-The dev server prints a local URL. Open it in a browser. The brief form is the entry point.
+The dev server prints a local URL. Open it in a browser. The first thing a visitor sees is the OnboardingState welcome card explaining the four keys; the Settings drawer auto-opens 600ms later. Once an OpenAI key is added, the brief form appears.
 
 ## Available scripts
 
@@ -70,13 +71,23 @@ npm run dev            start the Vite dev server with HMR
 npm run build          produce a production build under dist
 npm run preview        serve the production build on 0.0.0.0 port 8080
 npm run typecheck      run tsc without emitting
+npm test               run the Vitest suite once
+npm run test:watch     run Vitest in watch mode
 npm run record-voices  generate the prerecorded voice tone samples (one-time)
 npm run bake-sample    bake a finished run into a static demo preset (one-time)
 ```
 
+## Onboarding and gating
+
+A fresh visitor with no API keys configured does not see the brief form. Instead they see an OnboardingState card that explains the four services, what each is used for, and a primary "Open Settings" button. If a sample preset has been baked, a secondary "Try the sample brief instead" button is shown so the visitor can experience the full pipeline without entering any keys.
+
+The Settings drawer auto-opens once per session 600ms after the visitor lands, so the welcome card stays readable while the drawer slides in. A sessionStorage flag prevents the drawer from re-opening on subsequent loads in the same tab.
+
+Once an OpenAI key is added, the brief form appears and the demo proceeds normally. The other three keys (fal.ai, ElevenLabs, Anthropic) are added on demand as the visitor reaches each step.
+
 ## How the four steps work
 
-Step one, copy. The user submits the brief. The copy step auto-fires a call to OpenAI which returns two variants of headline, caption, and call-to-action. The user picks one, or asks for two more, or describes a refinement.
+Step one, copy. The user submits the brief. The copy step auto-fires a call that returns two variants of headline, caption, and call-to-action. When an Anthropic key is configured, this call routes through Claude Sonnet. Otherwise it falls back to gpt-4o-mini and surfaces a small banner offering the upgrade. The user picks one, asks for two more, or describes a refinement.
 
 Step two, image. After copy is approved, the image step auto-fires. It uses an LLM-driven prompt builder that takes the brief, the approved copy, and any active image modifications, and produces a single-paragraph Flux Schnell prompt. The prompt goes to fal.ai which returns an image URL. Two variants are produced in parallel. The user picks one, asks for more, refines in plain English, or clicks Critique to get prose feedback from Claude Sonnet with vision.
 
@@ -112,9 +123,9 @@ Audio caching runs in-memory only. The Blob and object URL backing the audio var
 
 Step three's voice picker has two modes.
 
-If the visitor has an ElevenLabs key configured, the picker fetches their account's actual voices via GET /v1/voices and renders them as cards. Each card uses the voice's name and category as labels. There is no prerecorded preview for these voices. The visitor picks by name and hears the result in the final render on step four.
+If the visitor has an ElevenLabs key configured, the picker fetches their account's actual voices via GET /v1/voices and renders them as cards. While the fetch is in flight, a "Loading your ElevenLabs account voices…" panel is shown instead of the grid, so the visitor cannot accidentally pick a hardcoded fallback voice before the real list arrives. Each card uses the voice's name and category as labels. There is no prerecorded preview for these voices; the visitor picks by name and hears the result in the final render on step four.
 
-If the visitor has no ElevenLabs key, or the fetch fails, the picker falls back to a hardcoded library of eight legacy ElevenLabs voices. For these, prerecorded MP3 previews can be generated once by the demo owner.
+If the visitor has no ElevenLabs key, or the fetch fails, the picker falls back to a hardcoded library of eight ElevenLabs voices. For these, prerecorded MP3 previews can be generated once by the demo owner and committed to the repo.
 
 To generate the prerecorded previews
 
@@ -122,9 +133,11 @@ To generate the prerecorded previews
 ELEVENLABS_API_KEY=your_key_here npm run record-voices
 ```
 
-The script reads the eight voice ids and the shared sample sentence from src/data/voiceLibrary.ts, calls ElevenLabs TTS for each, and saves the resulting MP3s under public/voices. Run this once. The files become part of the static build. There is no runtime cost.
+The script reads the eight voice ids and the shared sample sentence from src/data/voiceLibrary.ts, calls ElevenLabs TTS for each, and saves the resulting MP3s under public/voices. Commit the resulting MP3s so a fresh clone of the repo has working previews without needing the recording key.
 
-If the script's voices are not in the demo owner's ElevenLabs account, the script will fail per missing voice. Adding the named voices at https://elevenlabs.io/app/voice-library is the fix.
+If a particular hardcoded voice id is not in the demo owner's ElevenLabs account, the record-voices script prints a failure for that id and moves on. Ship whatever succeeded. The picker hides cards without prerecorded preview audio, so a partial set of voices is fine.
+
+When the audio render fails because the picked voice is not in the visitor's account (which can happen if they picked a hardcoded fallback voice), the error surface includes a "← Pick a different voice" button that drops the visitor back to step three's voice picker, where their real account voices are loaded.
 
 ## Sample preset
 
@@ -152,13 +165,21 @@ npm run bake-sample
 
 The script fetches every cached image from fal.media, copies them to public/samples/images, copies the audio MP3 to public/samples/audio, rewrites every URL to a relative samples path, drops the audioBlob field, and writes public/samples/preset.json with three keys: brief, variantCache, and audioCache.
 
-After the bake, commit and push. The next visitor sees a "Try sample brief and explore" button on the brief form. Click it and the entire pipeline restores from cache in milliseconds with zero network requests.
+After the bake, commit and push. The next visitor sees a "Try sample brief and explore" button on the brief form and on the OnboardingState card. Click it and the entire pipeline restores from cache in milliseconds with zero network requests.
+
+## Error handling
+
+Every user-facing error string is sourced from src/services/errorMessages.ts. Services throw an AppError with a stable code (e.g. openai/auth-failed, eleven/voice-not-found, fal/network) and the InlineError component looks up the plain-language message via humanize(). Technical detail like "status 401: invalid_api_key" is logged to console.debug, not shown to the visitor.
+
+Each error surface renders a "Try again" button and, when the failure is key-related, an "Open Settings" button. The voice-not-found case additionally renders a "Pick a different voice" button that drops back to step three.
 
 ## Graceful degradation
 
 If the visitor is missing some keys, the demo continues gracefully where possible.
 
-No Anthropic key. The Critique button on each image variant is disabled with a tooltip explaining what is missing. The rest of the flow works.
+No OpenAI key. The OnboardingState card is shown instead of the brief form. The Settings drawer auto-opens once after 600ms.
+
+No Anthropic key. The Critique button on each image variant is disabled with a tooltip explaining what is missing. Copy generation falls back to gpt-4o-mini and surfaces a small banner offering the upgrade. The rest of the flow works.
 
 No ElevenLabs key, with sample preset baked. The audio step falls back to the sample preset audio and shows a banner reading "Demo audio shown, add ElevenLabs key for live generation". The visitor can still hear something, can still approve, can still get to the final package.
 
@@ -188,7 +209,7 @@ The top-level layout under demo-v2.
 src/
   main.tsx              entry point
   polyfills.ts          crypto.randomUUID polyfill for HTTP contexts
-  App.tsx               root component with stepper, brief form, settings drawer, debug panel
+  App.tsx               root component with stepper, brief form, settings drawer, debug panel, onboarding gate
   types.ts              shared types and variant union
   vite-env.d.ts         Vite client types
   styles/index.css      Tailwind v4 entry
@@ -197,53 +218,71 @@ src/
     settings.slice.ts   API keys, settings drawer state, key validation
     brief.slice.ts      brief form state
     steps.slice.ts      step state machine, variant cache, downstream invalidation
+    steps.slice.test.ts slice tests covering gating, cascade, invalidation, reopen
   components/
-    Stepper.tsx         four-step progress at the top
-    SettingsDrawer.tsx  slide-in panel with the four API key inputs
-    BriefForm.tsx       initial form, sample preset button
-    StepShell.tsx       routes the visible step body based on active step
-    CopyStep.tsx        step one
-    ImageStep.tsx       step two
-    ScriptStep.tsx      step three with script picker and voice picker phases
-    VoicePicker.tsx     voice tone grid
-    AudioStep.tsx       step four
-    FinalPackage.tsx    final assembled view with download button
-    DirectorsNotes.tsx  prose audit trail summary
-    WaveformPlayer.tsx  wavesurfer.js wrapper for the audio player
-    CacheRestorePill.tsx small restored-from-cache indicator
+    Stepper.tsx           four-step progress at the top
+    SettingsDrawer.tsx    slide-in panel with the four API key inputs
+    BriefForm.tsx         initial form, sample preset button
+    OnboardingState.tsx   first-impression welcome card when no OpenAI key
+    StepShell.tsx         routes the visible step body based on active step
+    CopyStep.tsx          step one (Sonnet when Anthropic key present, else 4o-mini)
+    ImageStep.tsx         step two
+    ScriptStep.tsx        step three with script picker and voice picker phases
+    VoicePicker.tsx       voice tone grid (user-account voices, gated loading state)
+    AudioStep.tsx         step four (with voice-not-found recovery button)
+    FinalPackage.tsx      final assembled view with download button
+    DirectorsNotes.tsx    prose audit trail summary
+    WaveformPlayer.tsx    wavesurfer.js wrapper for the audio player
+    CacheRestorePill.tsx  small restored-from-cache indicator
+    InlineError.tsx       shared error surface with plain-language strings + recovery actions
     TranslatorHarness.tsx the test-route dev tool
   services/
-    openaiClient.ts     shared chat completions JSON helper
-    llmService.ts       generateCopy, generateImages, generateScript, validation
-    translator.ts       direction translator, three system prompts
+    openaiClient.ts      shared chat completions JSON helper
+    anthropicClient.ts   Anthropic Messages helper, tool-use for structured JSON
+    llmService.ts        generateCopy, generateImages, generateScript, validation
+    translator.ts        direction translator, three system prompts
     imagePromptBuilder.ts builds Flux prompts from brief plus copy plus mods
-    critiqueService.ts  Anthropic Sonnet with vision for image critique
-    audioService.ts     ElevenLabs TTS for the final render
-    voicesService.ts    fetches the visitor ElevenLabs account voices
-    sampleLoader.ts     loads and applies the sample preset
-    exportService.ts    builds the download zip
-    stepHash.ts         hash function for the variant cache
-    directorsNotes.ts   builds the audit trail data and markdown
+    critiqueService.ts   Anthropic Sonnet with vision for image critique
+    audioService.ts      ElevenLabs TTS for the final render
+    voicesService.ts     fetches the visitor ElevenLabs account voices
+    sampleLoader.ts      loads and applies the sample preset
+    exportService.ts     builds the download zip
+    stepHash.ts          hash function for the variant cache
+    stepHash.test.ts     tests for the hash function
+    directorsNotes.ts    builds the audit trail data and markdown
+    directorsNotes.test.ts tests for the markdown generator
+    errorMessages.ts     AppError class and plain-language message lookup
   data/
-    voiceLibrary.ts     hardcoded fallback voice list
+    voiceLibrary.ts      hardcoded fallback voice list and resolveVoice helper
+    voiceLibrary.test.ts tests for resolveVoice
+  test/
+    fixtures.ts          typed factories for AppState test doubles
 scripts/
-  record-voices.ts      generates the prerecorded voice samples
-  bake-sample.ts        bakes a finished run into the sample preset
+  record-voices.ts       generates the prerecorded voice samples
+  bake-sample.ts         bakes a finished run into the sample preset
 public/
-  samples/              generated by bake-sample, served as static
-  voices/               generated by record-voices, served as static
+  samples/               generated by bake-sample, served as static
+  voices/                generated by record-voices, served as static
 ```
 
 ## Tests
 
-Vitest runs the unit tests for the pure-function modules.
+Vitest runs the unit tests for the pure-function modules and the store slice.
 
 ```
 npm test           run once
 npm run test:watch run in watch mode
 ```
 
-Current coverage is focused on the two highest-value pure functions: the variant cache hash (src/services/stepHash.ts) and the Director's Notes markdown generator (src/services/directorsNotes.ts). The hash tests pin down the five spec assertions from D7 plus edge cases around which history-entry kinds contribute to the hash. The Director's Notes tests cover the brief block, refinement listings, critique-applied separation, regenerate counting, and the "_None_" rendering for steps approved without refinement.
+Current coverage, 57 tests across four files:
+
+- src/services/stepHash.test.ts pins down the five spec assertions from D7 (idempotence, brief invalidation, copy.selectedIndex invalidation of downstream, voice scoped to audio only, image-refine scoped to image's own hash) plus the six history-kind contribution rules and output-format edges.
+
+- src/services/directorsNotes.test.ts covers the brief block, typed-refine vs applied-critique separation, regenerate counting, markdown rendering with refinement bullets, "_None_" fallback for steps approved without refinement, and the regenerate parenthetical.
+
+- src/data/voiceLibrary.test.ts covers resolveVoice — the helper that synthesizes a VoiceSample from voice-pick history when the stored id is a user-account voice not in the hardcoded library. Hardcoded library hits, history fallback, most-recent-wins, and synthetic fallback.
+
+- src/store/steps.slice.test.ts covers the state machine architecture invariants from D7: isStepUnlocked gating (all locked before brief, only copy after submit, sequential cascade), activeStepId derivation, the cascade chain through all four steps to allApproved, downstream invalidation rules (selection change clears, first-time pick does not, same selection does not, voice change clears audio only), the append-vs-replace distinction, and reopenStep semantics for script versus other steps.
 
 Test fixtures live at src/test/fixtures.ts and provide a typed factory for building AppState test doubles. Use that factory rather than constructing state literals by hand — it keeps test setup short and isolates type changes to one file.
 
@@ -253,9 +292,9 @@ The deployed JavaScript bundle is readable. The translator system prompts, which
 
 The Settings drawer's validate button hits real provider endpoints. fal.ai's validation does a zero-cost POST with an empty body that produces a 422 response on a valid key. This is intentional but does consume one API request per click. The other three providers use cheap GET endpoints.
 
-The audio Blob does not persist across page reloads. A reload mid-flow drops the audio variant and triggers a regeneration on next entry to the audio step. This is by design because Blobs do not survive JSON serialisation.
+The audio Blob does not persist across page reloads. A reload mid-flow drops the audio variant and triggers a regeneration on next entry to the audio step. This is by design because Blobs do not survive JSON serialisation. A reload at the final-package state means the audio re-renders against ElevenLabs, which has a small but real cost; documented and accepted.
 
-The hardcoded voice library uses legacy ElevenLabs voice ids that new accounts do not get by default. The runtime falls back to those if it cannot fetch the visitor's account voices. If the demo owner wants the hardcoded names to work for prospects without keys, the named voices must be added at the demo owner's ElevenLabs account before running the record-voices script.
+The hardcoded voice library uses ElevenLabs voice ids from the original premade catalog. Not every account has all of them anymore. The runtime prefers the visitor's actual account voices when an ElevenLabs key is configured; the hardcoded list exists only as a preview-only fallback for visitors without keys. If a visitor somehow picks a hardcoded voice that their account does not have, the audio step's voice-not-found recovery button drops them back to the picker, where their real voices are loaded.
 
 The sample preset is owner-baked, not user-generated. There is intentionally no save-this-session-as-a-sample UI. The bake-sample script is a developer tool, not an end-user feature.
 
