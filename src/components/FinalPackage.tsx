@@ -3,7 +3,7 @@ import { useAppStore } from '../store';
 import { downloadPackage } from '../services/exportService';
 import { WaveformPlayer } from './WaveformPlayer';
 import { DirectorsNotes } from './DirectorsNotes';
-import { getVoiceById } from '../data/voiceLibrary';
+import { resolveVoice } from '../data/voiceLibrary';
 import {
   audioVariantsOf,
   copyVariantsOf,
@@ -25,7 +25,7 @@ export function FinalPackage() {
   const image = imageVariantsOf(state.steps.image.variants)[state.steps.image.selectedIndex ?? -1];
   const script = scriptVariantsOf(state.steps.script.variants)[state.steps.script.selectedIndex ?? -1];
   const audio = audioVariantsOf(state.steps.audio.variants)[state.steps.audio.selectedIndex ?? -1];
-  const voice = getVoiceById(state.steps.script.selectedVoiceId);
+  const voice = resolveVoice(state.steps.script.selectedVoiceId, state.steps.script.history);
 
   if (!copy || !image || !script || !audio || !voice) {
     return (

@@ -9,7 +9,7 @@ import {
 } from '../services/sampleLoader';
 import { WaveformPlayer } from './WaveformPlayer';
 import { CacheRestorePill } from './CacheRestorePill';
-import { getVoiceById } from '../data/voiceLibrary';
+import { resolveVoice } from '../data/voiceLibrary';
 import {
   audioVariantsOf,
   scriptVariantsOf,
@@ -117,7 +117,7 @@ export function AudioStep() {
     scriptStep.selectedIndex !== null
       ? scriptVariantsOf(scriptStep.variants)[scriptStep.selectedIndex]
       : undefined;
-  const voice = getVoiceById(scriptStep.selectedVoiceId);
+  const voice = resolveVoice(scriptStep.selectedVoiceId, scriptStep.history);
 
   function injectDemoVariant(): boolean {
     if (!samplePreset || !approvedScript || !voice) return false;

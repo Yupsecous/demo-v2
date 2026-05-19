@@ -76,3 +76,41 @@ export function getVoiceById(id: string | null | undefined): VoiceSample | undef
   if (!id) return undefined;
   return VOICE_LIBRARY.find((v) => v.id === id);
 }
+
+// Resolve a voice id to a renderable VoiceSample regardless of source.
+//
+// Why this exists: VoicePicker fetches the visitor's actual ElevenLabs
+// voices and stores selectedVoiceId as the user-account voice_id (e.g.
+// "9BWtsMINqrJLrRacOk9x"). That id isn't in the hardcoded VOICE_LIBRARY,
+// so a naive getVoiceById lookup returns undefined and AudioStep falls
+// to its "Upstream selection missing" guard. Walk the script step's
+// voice-pick history to recover the display name, and use the voice id
+// as the elevenlabsVoiceId directly (they're the same value for
+// user-account voices).
+export type VoicePickHistoryEntry = { kind: 'voice-pick'; voiceId: string; voiceName: string };
+
+export function resolveVoice(
+  id: string | null | undefined,
+  history: ReadonlyArray<{ kind: string; voiceId?: string; voiceName?: string }>,
+): VoiceSample | null {
+  if (!id) return null;
+  const fromLib = VOICE_LIBRARY.find((v) => v.id === id);
+  if (fromLib) return fromLib;
+  for (let i = history.length - 1; i >= 0; i--) {
+    const h = history[i];
+    if (h && h.kind === 'voice-pick' && h.voiceId === id && h.voiceName) {
+      return {
+        id,
+        displayName: h.voiceName,
+        toneLabel: '',
+        elevenlabsVoiceId: id,
+      };
+    }
+  }
+  return {
+    id,
+    displayName: id,
+    toneLabel: '',
+    elevenlabsVoiceId: id,
+  };
+}

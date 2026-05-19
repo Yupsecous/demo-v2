@@ -1,4 +1,4 @@
-import { getVoiceById } from '../data/voiceLibrary';
+import { resolveVoice } from '../data/voiceLibrary';
 import {
   audioVariantsOf,
   copyVariantsOf,
@@ -73,7 +73,7 @@ export function buildDirectorsNotesData(state: AppState): DirectorsNotesData {
     imageStep.selectedIndex !== null ? imageVariants[imageStep.selectedIndex] : undefined;
   const approvedScript =
     scriptStep.selectedIndex !== null ? scriptVariants[scriptStep.selectedIndex] : undefined;
-  const approvedVoice = getVoiceById(scriptStep.selectedVoiceId);
+  const approvedVoice = resolveVoice(scriptStep.selectedVoiceId, scriptStep.history);
 
   return {
     brief: state.brief,

@@ -4,7 +4,7 @@ import { llmService } from '../services/llmService';
 import { computeStepHash } from '../services/stepHash';
 import { VoicePicker } from './VoicePicker';
 import { CacheRestorePill } from './CacheRestorePill';
-import { getVoiceById } from '../data/voiceLibrary';
+import { resolveVoice } from '../data/voiceLibrary';
 import {
   copyVariantsOf,
   imageVariantsOf,
@@ -381,7 +381,7 @@ export function ScriptStep() {
             <div className="rounded-md border border-neutral-200 bg-white px-4 py-2 text-sm text-neutral-700">
               Voice locked:{' '}
               <span className="font-medium text-neutral-900">
-                {getVoiceById(step.selectedVoiceId)?.displayName ?? step.selectedVoiceId}
+                {resolveVoice(step.selectedVoiceId, step.history)?.displayName ?? step.selectedVoiceId}
               </span>
             </div>
           )}
