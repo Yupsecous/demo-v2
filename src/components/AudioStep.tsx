@@ -10,7 +10,7 @@ import {
 import { WaveformPlayer } from './WaveformPlayer';
 import { CacheRestorePill } from './CacheRestorePill';
 import { InlineError } from './InlineError';
-import { AppError } from '../services/errorMessages';
+import { AppError, isAppError } from '../services/errorMessages';
 import { resolveVoice } from '../data/voiceLibrary';
 import {
   audioVariantsOf,
@@ -81,6 +81,7 @@ export function AudioStep() {
   const addHistoryEntry = useAppStore((s) => s.addHistoryEntry);
   const pickVariant = useAppStore((s) => s.pickVariant);
   const restoreFromCache = useAppStore((s) => s.restoreFromCache);
+  const reopenStep = useAppStore((s) => s.reopenStep);
   const openDrawer = useAppStore((s) => s.openDrawer);
 
   const variants = audioVariantsOf(step.variants);
@@ -276,10 +277,30 @@ export function AudioStep() {
       )}
 
       {errorObj !== null && (
-        <InlineError
-          error={errorObj}
-          onRetry={() => void runGenerate({ regenerate: !!current })}
-        />
+        <>
+          <InlineError
+            error={errorObj}
+            onRetry={() => void runGenerate({ regenerate: !!current })}
+          />
+          {isAppError(errorObj) && errorObj.code === 'eleven/voice-not-found' && (
+            <div className="-mt-2 rounded-md border border-neutral-200 bg-white p-3 text-sm">
+              <p className="text-neutral-700">
+                The voice you picked isn&apos;t in your ElevenLabs account. Go back to step 3 and
+                pick one of your account voices instead.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setErrorObj(null);
+                  reopenStep('script');
+                }}
+                className="mt-2 rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-800"
+              >
+                ← Pick a different voice
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {restoredFromCache && <CacheRestorePill />}

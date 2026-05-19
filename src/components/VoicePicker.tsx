@@ -218,6 +218,11 @@ export function VoicePicker({
         </div>
       )}
 
+      {source === 'loading' && elevenKey.trim().length > 0 ? (
+        <div className="rounded-md border border-neutral-200 bg-white p-6 text-sm text-neutral-600">
+          Loading your ElevenLabs account voices…
+        </div>
+      ) : (
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {voices.map((voice) => {
           const isPlaying = playingId === voice.id;
@@ -264,6 +269,7 @@ export function VoicePicker({
           );
         })}
       </div>
+      )}
     </section>
   );
 }
