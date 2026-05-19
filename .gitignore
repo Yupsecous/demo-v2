@@ -1,0 +1,11 @@
+node_modules
+dist
+*.local
+.vite
+.DS_Store
+.vercel
+
+# Sample-bake working files — may contain pasted state dumps that include
+# API keys (sessionStorage state includes the keys field). Never ship these.
+samples/source-state.json
+samples/audio/

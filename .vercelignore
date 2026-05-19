@@ -1,0 +1,14 @@
+node_modules
+dist
+.vite
+.DS_Store
+.vercel
+
+# Working files for the sample-bake — may contain pasted state including
+# API keys. The final baked output lives under public/samples/ and IS shipped.
+samples/source-state.json
+samples/audio/
+
+# Dev-only docs
+D8-FINDINGS.md
+LOOM-SCRIPT.md
