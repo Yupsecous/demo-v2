@@ -3,7 +3,11 @@ export type VoiceSample = {
   displayName: string;
   toneLabel: string;
   elevenlabsVoiceId: string;
-  sampleMp3: string;
+  // Optional — only the hardcoded library has prerecorded MP3s. Voices
+  // fetched from the user's ElevenLabs account at runtime don't carry a
+  // preview file; the player skips preview for those and the user picks
+  // by name + category.
+  sampleMp3?: string;
 };
 
 export const VOICE_SAMPLE_SENTENCE =

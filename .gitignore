@@ -4,6 +4,7 @@ dist
 .vite
 .DS_Store
 .vercel
+tsconfig.tsbuildinfo
 
 # Sample-bake working files — may contain pasted state dumps that include
 # API keys (sessionStorage state includes the keys field). Never ship these.
