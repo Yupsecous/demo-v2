@@ -102,7 +102,7 @@ export function WaveformPlayer({ audioUrl, onDurationLoaded, height = 64 }: Prop
           aria-label={playing ? 'Pause' : 'Play'}
           className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
             playing
-              ? 'border-neutral-900 bg-neutral-900 text-white hover:bg-neutral-800'
+              ? 'border-brand bg-brand text-white hover:bg-brand-dark'
               : 'border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-50'
           }`}
         >

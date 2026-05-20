@@ -56,11 +56,13 @@ export function FinalPackage() {
 
   return (
     <article className="space-y-8">
-      <header className="flex flex-wrap items-start justify-between gap-3">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-wider text-neutral-500">Approved</p>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight">Final package</h2>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-success-700">Approved</p>
+          <h2 className="font-serif mt-2 text-4xl font-medium leading-tight tracking-tight text-ink">
+            Final package
+          </h2>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">
             All four assets locked. Download the bundle or backtrack to any step to revise.
           </p>
         </div>
@@ -76,7 +78,7 @@ export function FinalPackage() {
             type="button"
             onClick={handleDownload}
             disabled={downloading}
-            className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:bg-neutral-400"
+            className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:bg-ink-faint"
           >
             {downloading ? 'Packaging…' : 'Download package'}
           </button>

@@ -47,9 +47,13 @@ export function BriefForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight">The brief</h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          Three lines. The director&apos;s cockpit will walk you through copy, image, script, and audio — one at a time.
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent">The brief</p>
+        <h1 className="font-serif mt-2 text-3xl font-medium leading-tight tracking-tight text-ink">
+          Three lines, four assets.
+        </h1>
+        <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink-soft">
+          The director&apos;s cockpit will walk you through copy, image, script, and audio — one at
+          a time.
         </p>
       </header>
 
@@ -103,7 +107,7 @@ export function BriefForm() {
       <div className="pt-2">
         <button
           type="submit"
-          className="rounded-md bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-neutral-800"
+          className="rounded-md bg-brand px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-dark"
         >
           Start
         </button>

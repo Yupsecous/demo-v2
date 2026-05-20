@@ -246,7 +246,7 @@ export function VoicePicker({
                     onClick={() => toggle(voice)}
                     className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-neutral-700 transition-colors ${
                       isPlaying
-                        ? 'border-neutral-900 bg-neutral-900 text-white hover:bg-neutral-800'
+                        ? 'border-brand bg-brand text-white hover:bg-brand-dark'
                         : 'border-neutral-300 bg-white hover:bg-neutral-50'
                     }`}
                     aria-label={isPlaying ? `Pause ${voice.displayName}` : `Play ${voice.displayName}`}
@@ -261,7 +261,7 @@ export function VoicePicker({
               <button
                 type="button"
                 onClick={() => onSelect(voice)}
-                className="mt-4 rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-800"
+                className="mt-4 rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
               >
                 Select this voice
               </button>

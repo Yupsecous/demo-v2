@@ -171,18 +171,23 @@ export default function App() {
 
   return (
     <div className="min-h-full bg-white">
-      <header className="border-b border-neutral-200">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <div>
-            <p className="text-xs uppercase tracking-wider text-neutral-500">Demo v2</p>
-            <h1 className="text-base font-semibold tracking-tight">Director&apos;s cockpit</h1>
+      <header className="border-b border-rule bg-paper/80 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
+          <div className="flex items-baseline gap-3">
+            <div className="h-2 w-2 rounded-full bg-accent" aria-hidden="true" />
+            <p className="font-serif text-lg font-medium tracking-tight text-ink">
+              Director&apos;s Cockpit
+            </p>
+            <p className="hidden text-xs uppercase tracking-[0.18em] text-ink-faint sm:block">
+              v2
+            </p>
           </div>
           <div className="flex items-center gap-2">
             {briefSubmitted && (
               <button
                 type="button"
                 onClick={restart}
-                className="rounded-md border border-neutral-200 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50"
+                className="rounded-md border border-rule px-3 py-1.5 text-sm text-ink-soft transition-colors hover:bg-canvas-deep hover:text-ink"
               >
                 New brief
               </button>
@@ -190,7 +195,7 @@ export default function App() {
             <button
               type="button"
               onClick={openDrawer}
-              className="rounded-md border border-neutral-200 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50"
+              className="rounded-md border border-rule px-3 py-1.5 text-sm text-ink-soft transition-colors hover:bg-canvas-deep hover:text-ink"
             >
               Settings
             </button>

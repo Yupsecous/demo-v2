@@ -31,13 +31,13 @@ export function Stepper() {
 
         const base = 'flex flex-1 items-center gap-3 rounded-md border px-4 py-3 transition-colors';
         const tone = !unlocked
-          ? 'border-neutral-200 bg-neutral-50 text-neutral-400'
+          ? 'border-rule bg-canvas-deep text-ink-faint'
           : isActive
-            ? 'border-neutral-900 bg-white text-neutral-900'
+            ? 'border-brand bg-paper text-ink shadow-sm'
             : isApproved
-              ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
-              : 'border-neutral-300 bg-white text-neutral-700';
-        const interactivity = clickable ? 'cursor-pointer hover:bg-emerald-100' : 'cursor-default';
+              ? 'border-success-200 bg-success-50 text-success-700'
+              : 'border-rule-strong bg-paper text-ink-soft';
+        const interactivity = clickable ? 'cursor-pointer hover:bg-success-50/60' : 'cursor-default';
 
         return (
           <li key={id} className="flex flex-1 items-center gap-2">

@@ -89,7 +89,7 @@ export function SettingsDrawer() {
             type="button"
             onClick={validateAll}
             disabled={validating}
-            className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:bg-neutral-400"
+            className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:bg-ink-faint"
           >
             {validating ? 'Validating…' : 'Validate keys'}
           </button>

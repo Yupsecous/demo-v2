@@ -119,7 +119,7 @@ function CritiqueBlock({
             <button
               type="button"
               onClick={() => onApply(critique.text)}
-              className="rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-800"
+              className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
             >
               Apply this critique
             </button>
@@ -209,7 +209,7 @@ function VariantCard({
           <button
             type="button"
             onClick={onPick}
-            className="flex-1 rounded-md bg-neutral-900 px-3.5 py-1.5 text-sm font-medium text-white hover:bg-neutral-800"
+            className="flex-1 rounded-md bg-brand px-3.5 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
           >
             Pick this
           </button>
@@ -569,7 +569,7 @@ export function ImageStep() {
                 type="button"
                 onClick={() => void runRefine()}
                 disabled={loading !== null || refineText.trim().length === 0 || keysMissing}
-                className="self-start rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+                className="self-start rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:bg-ink-faint"
               >
                 {loading === 'refine' ? 'Refining…' : 'Refine'}
               </button>

@@ -109,7 +109,7 @@ function ScriptCard({
         <button
           type="button"
           onClick={onPick}
-          className="ml-auto rounded-md bg-neutral-900 px-3.5 py-1.5 text-sm font-medium text-white hover:bg-neutral-800"
+          className="ml-auto rounded-md bg-brand px-3.5 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
         >
           Pick this
         </button>
@@ -458,7 +458,7 @@ export function ScriptStep() {
                     type="button"
                     onClick={runRefine}
                     disabled={loading !== null || refineText.trim().length === 0 || apiKeyMissing}
-                    className="self-start rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+                    className="self-start rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:bg-ink-faint"
                   >
                     {loading === 'refine' ? 'Refining…' : 'Refine'}
                   </button>

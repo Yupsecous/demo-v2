@@ -294,7 +294,7 @@ export function AudioStep() {
                   setErrorObj(null);
                   reopenStep('script');
                 }}
-                className="mt-2 rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-800"
+                className="mt-2 rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
               >
                 ← Pick a different voice
               </button>
@@ -366,7 +366,7 @@ export function AudioStep() {
             <button
               type="button"
               onClick={approve}
-              className="rounded-md bg-neutral-900 px-5 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+              className="rounded-md bg-brand px-5 py-2 text-sm font-medium text-white hover:bg-brand-dark"
             >
               Approve
             </button>
