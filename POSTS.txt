@@ -1,0 +1,98 @@
+==============================================================
+LINKEDIN POST
+==============================================================
+
+Spent the past week building a tool I'd wanted to exist: a director's
+cockpit for marketing creative.
+
+One brief in. Four assets out — copy, image, script, voice. But the
+part that mattered wasn't the generation. It was that the human
+directs every step in plain English. "More aggressive, less corporate."
+"Lighter background, more energy." "The model should smile more."
+
+A translator layer behind the scenes converts those plain-language
+directions into structured modifications — lighting, composition,
+palette, mood for images; pace, delivery, voice character for audio;
+words to emphasize and hedge-language to avoid for copy. The user
+never writes a prompt. The model never sees a vague instruction.
+
+Three things turned out to matter more than I expected:
+
+The hardest problem isn't generation quality. It's making backtracking
+feel free. A variant cache keyed on hash(brief + upstream choices +
+refine history) means that when a user explores three branches and
+comes back to the original, the entire downstream chain restores from
+cache in milliseconds. Zero API calls. The "I can keep exploring
+without burning money" feeling is what unlocks real creative iteration.
+
+Critique-as-feature beats generation-as-feature. Claude Sonnet with
+vision, given a single hand-written system prompt that demands
+"strengths first, then what's losing momentum, then one concrete
+alternative," produces feedback that reads like a senior creative
+director, not an error report. A one-click "Apply this critique"
+button then makes the change. People stop tinkering and start
+improving.
+
+Plain-language refine is the actual product. Everything else is
+plumbing.
+
+Stack is intentionally boring: Vite + React + TypeScript, Zustand for
+state, no backend. All API keys live in the visitor's browser session,
+never on a server. The deployed bundle is under 150 KB gzipped.
+
+The IP is the few-shot examples in the translator's system prompts —
+hand-written, several hundred lines per asset type, the difference
+between "more cinematic" producing a genuinely cinematic image and
+producing the same image with marginally different lighting.
+
+Live at: https://demo-v2-steel.vercel.app/
+
+If you're building creative tools, director-in-the-loop AI workflows,
+or anything where the failure mode is "the prompt didn't capture what
+I actually meant," I'd genuinely enjoy comparing notes.
+
+
+
+==============================================================
+SLACK POST (for the AI marketing community)
+==============================================================
+
+sharing something I built this week if anyone's working in this space
+
+it's a director's cockpit demo for marketing asset generation. brief
+→ copy → image → script → audio, but the part that's interesting is
+that the user only refines in plain English ("more aggressive,"
+"lighter background," "the person should be smiling") — never writes
+a prompt. a translator layer in between converts those directions
+into structured mods (lighting / composition / palette for images,
+pace / delivery / voice character for audio, emphasize-these /
+avoid-these for copy).
+
+three things that turned out to matter more than expected:
+
+1) variant cache makes backtracking effectively free. when you explore
+a branch, come back, take a different fork — the original branch
+restores from cache instantly. zero API calls on re-visit. exploring
+stops feeling expensive.
+
+2) claude sonnet w/ vision, given a "strengths first / what's losing
+momentum / one concrete alternative" structure, writes image critiques
+that read like a senior creative director. "apply this critique" then
+auto-regenerates with the fix folded in. that loop is the strongest
+moment in the demo.
+
+3) director's notes at the end — a prose audit trail of every refine
+and critique you applied, in order. "pushed for more aggressive,
+applied critique on lighting, picked variant 2." reads like a debrief,
+not a JSON dump. shipped as part of the downloadable zip with the
+final assets.
+
+all in browser, BYO keys (openai + fal.ai + elevenlabs + anthropic).
+no backend, no proxy, keys live only in the visitor's sessionStorage.
+
+live at https://demo-v2-steel.vercel.app/
+
+curious to hear from anyone who's worked on the plain-language-refine
+vs. raw-prompts tradeoff — it's the part of the design space that
+feels most underexplored to me. happy to walk through the architecture
+in DMs if anyone wants to compare notes.

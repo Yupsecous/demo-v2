@@ -365,9 +365,11 @@ async function generateFluxImage(args: { prompt: string; falKey: string }): Prom
   }
 
   if (!res.ok) {
-    if (res.status === 401) throw new AppError('fal/auth-failed');
-    if (res.status === 429) throw new AppError('fal/rate-limit');
     const text = await res.text().catch(() => '');
+    if (res.status === 401) throw new AppError('fal/auth-failed', text.slice(0, 200));
+    if (res.status === 402) throw new AppError('fal/no-credits', text.slice(0, 200));
+    if (res.status === 403) throw new AppError('fal/forbidden', text.slice(0, 200));
+    if (res.status === 429) throw new AppError('fal/rate-limit', text.slice(0, 200));
     throw new AppError('fal/bad-response', `status ${res.status}: ${text.slice(0, 200)}`);
   }
 
@@ -428,18 +430,35 @@ async function generateImages(args: GenerateImagesArgs): Promise<ImageVariant[]>
 
   const settled = await Promise.allSettled(tasks);
   const successes: ImageVariant[] = [];
-  const failures: string[] = [];
+  const failures: unknown[] = [];
   for (const r of settled) {
     if (r.status === 'fulfilled') {
       successes.push(r.value);
     } else {
-      const msg = r.reason instanceof Error ? r.reason.message : String(r.reason);
-      failures.push(msg);
+      failures.push(r.reason);
     }
   }
 
   if (successes.length === 0) {
-    throw new AppError('image/all-failed', failures.join(' | '));
+    // If every failure has the same AppError code, re-throw THAT directly
+    // so the UI shows a specific cause (e.g. "out of credits") instead of
+    // the generic "all attempts failed". Otherwise fall back to aggregate.
+    const codes = new Set(
+      failures
+        .map((f) => (f instanceof AppError ? f.code : null))
+        .filter((c) => c !== null),
+    );
+    if (codes.size === 1 && failures[0] instanceof AppError) {
+      throw failures[0];
+    }
+    const summary = failures
+      .map((f) => {
+        if (f instanceof AppError) return `${f.code}${f.detail ? ': ' + f.detail : ''}`;
+        if (f instanceof Error) return f.message;
+        return String(f);
+      })
+      .join(' | ');
+    throw new AppError('image/all-failed', summary);
   }
   if (failures.length > 0) {
     // partial success — surface to the console so the user can see what fell through

@@ -14,6 +14,8 @@ export type ErrorCode =
   | 'openai/bad-response'
   | 'openai/missing-key'
   | 'fal/auth-failed'
+  | 'fal/no-credits'
+  | 'fal/forbidden'
   | 'fal/rate-limit'
   | 'fal/network'
   | 'fal/bad-response'
@@ -62,6 +64,14 @@ const MESSAGES: Record<ErrorCode, ErrorEntry> = {
   'fal/auth-failed': {
     message: "Your fal.ai key isn't being accepted. Open Settings and check it.",
     pointToSettings: true,
+  },
+  'fal/no-credits': {
+    message:
+      "Your fal.ai account is out of credits. Top up at fal.ai/dashboard and try again.",
+  },
+  'fal/forbidden': {
+    message:
+      "Your fal.ai key doesn't have access to Flux Schnell. Check the key's permissions in your fal.ai dashboard.",
   },
   'fal/rate-limit': {
     message: 'fal.ai is busy. Wait a moment and try again.',

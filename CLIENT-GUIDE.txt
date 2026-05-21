@@ -1,0 +1,396 @@
+Director's Cockpit — Quick Start Guide
+
+Welcome. This document walks you through the demo at:
+
+  https://demo-v2-steel.vercel.app/
+
+Read time: about five minutes. After that, you'll be able to take any
+brief from idea to finished ad assets in roughly the same amount of
+time again.
+
+
+================================================================
+WHAT THIS DEMO DOES
+================================================================
+
+You give three lines of brief. The demo produces four marketing
+assets, in this order:
+
+  1. Ad copy        (headline, caption, call-to-action)
+  2. Image          (a generated photograph for the ad)
+  3. Script         (a voiceover script, 20-40 seconds)
+  4. Audio          (the script, read aloud by the voice you pick)
+
+At each step you see two options. You either pick one, ask for two
+more, or describe a refinement in plain English ("more aggressive,"
+"lighter background," "the person should smile more"). You never
+write a prompt. You direct.
+
+When all four steps are approved, the demo assembles a Final Package
+with a one-click zip download containing every asset plus a
+Director's Notes summary of every decision you made.
+
+
+================================================================
+TWO WAYS TO START
+================================================================
+
+OPTION A — The Quick Demo (no setup, sub-second)
+
+On the welcome screen, click "Try the sample brief instead." A
+pre-built run loads instantly. You'll see the entire pipeline restore
+from cache: copy, image, script, voice, and audio all approved in
+under a second, then the Final Package appears.
+
+Use this to see the shape of the tool before doing your own brief.
+No API keys needed. Zero network calls.
+
+
+OPTION B — Your Own Brief (requires four API keys)
+
+To run a real pipeline on your own product, you need to provide four
+API keys. The demo never sends them to any server other than the
+service each key belongs to, and they clear from your browser when
+you close the tab.
+
+Click "Open Settings" on the welcome screen. Paste the four keys.
+Click "Validate keys." When all four show a green check, close the
+Settings drawer and the brief form will appear.
+
+
+================================================================
+THE FOUR API KEYS YOU'LL NEED
+================================================================
+
+The keys are free or low-cost to sign up for. Per-session usage on a
+typical brief runs under a few cents total.
+
+  OpenAI        https://platform.openai.com/api-keys
+    Used by:    copy generation (fallback), script generation, image
+                prompt builder, direction translator
+    Note:       starts with "sk-..."
+
+  fal.ai        https://fal.ai/dashboard/keys
+    Used by:    image generation (Flux Schnell)
+    Note:       format is a UUID, a colon, and a hex string, all
+                pasted as one value. Make sure you copy the full key
+                including everything after the colon.
+
+  ElevenLabs    https://elevenlabs.io/app/settings/api-keys
+    Used by:    voice synthesis on the audio step
+    Note:       you also need to have at least one voice in your
+                ElevenLabs voice library — visit
+                https://elevenlabs.io/app/voicelab to confirm
+
+  Anthropic     https://console.anthropic.com/settings/keys
+    Used by:    higher-quality copy generation (Claude Sonnet) and
+                the optional image critique feature
+    Note:       starts with "sk-ant-..."
+
+If you skip the Anthropic key, the demo still works — copy generation
+falls back to OpenAI's smaller model and the image Critique button is
+disabled. Everything else functions normally.
+
+
+================================================================
+ENTERING YOUR KEYS
+================================================================
+
+  1. Click "Open Settings" in the welcome screen (or click "Settings"
+     in the top-right corner at any time).
+
+  2. The Settings drawer slides in from the right with four password
+     fields, one per service.
+
+  3. Paste each key into its corresponding field. The values are
+     hidden as you type (just like a password).
+
+  4. Click "Validate keys" at the bottom of the drawer. Each field
+     will show one of:
+
+         a green check  — the key was accepted
+         a red mark     — the key was rejected (re-check it)
+         a dash         — not yet validated
+
+  5. When all four show green checks, click "Close" at the top right
+     of the drawer.
+
+A tip: if a key shows red but you're sure you copied it correctly,
+clear the field, then paste again — sometimes a stray space or
+newline gets copied with the key.
+
+
+================================================================
+THE BRIEF FORM
+================================================================
+
+Three fields:
+
+  Product name      — what you're advertising
+  Target audience   — who you're advertising to
+  Ad angle          — the message or promise
+
+Examples:
+
+  Product name:    Strata Coffee
+  Target audience: early-shift workers, 25 to 40
+  Ad angle:        the first sip is the start of the win
+
+Click "Start." The copy step begins generating immediately.
+
+
+================================================================
+STEP 1: COPY
+================================================================
+
+After about two seconds, two copy variants appear, side by side. Each
+has:
+
+  Headline   — 6 to 10 words
+  Caption    — 2 to 3 sentences in Meta or Instagram tone
+  CTA        — 3 to 5 words, action-led
+
+Three things you can do:
+
+  Pick one         — click the dark "Pick this" button on the variant
+                     you like. The image step begins immediately.
+
+  Show me 2 more   — see two additional variants alongside the first
+                     two. The first two stay visible. Repeat as often
+                     as you like.
+
+  Refine           — type a direction in the textarea, then click
+                     Refine. Two NEW variants replace the current
+                     ones. Try:
+
+                         "more aggressive, less corporate"
+                         "softer, more conversational"
+                         "make it pop"
+                         "playful, light"
+
+When you pick a variant, the image step starts.
+
+
+================================================================
+STEP 2: IMAGE
+================================================================
+
+About three seconds after you approve copy, two images appear. The
+ad copy you picked is woven into the image — the headline's promise
+is what the image is selling.
+
+Three things to do:
+
+  Pick one         — click "Pick this." The script step begins.
+
+  Critique         — click "Critique" on any image. A creative-
+                     director review appears in 2 to 4 seconds:
+
+                         "The dashboard placement is strong — it
+                         draws the eye to the product first. The
+                         lighting reads stock-photo though, soft and
+                         even across the frame, which kills the
+                         urgency the headline is selling. Try a
+                         single warm key light from the right and
+                         let the background fall into shadow; same
+                         composition, much more weight."
+
+                     Below the critique, an "Apply this critique"
+                     button. Clicking it generates two new images
+                     that address what the critique pointed out.
+
+  Refine           — same as copy step. Type a direction:
+
+                         "lighter background, more energy"
+                         "more cinematic"
+                         "darker, more dramatic"
+                         "the person should be smiling"
+
+The Critique feature requires the Anthropic API key. Without it,
+the button is disabled.
+
+
+================================================================
+STEP 3: SCRIPT + VOICE
+================================================================
+
+This step has two phases.
+
+PHASE A — Pick a script
+
+Two script variants appear. Each is 50 to 100 words, designed for
+spoken delivery — short clauses, natural breath points, no corporate
+hedging. Read one out loud to make sure it sounds right in your
+voice.
+
+Pick one. Refine in plain English if needed:
+
+    "more urgent"
+    "calmer, more grounded"
+    "punchier"
+
+
+PHASE B — Pick a voice
+
+After picking a script, a panel appears with voices from your
+ElevenLabs account. Each card shows the voice's name and category.
+
+  Click the play icon on a card to preview the voice (if available)
+  Click "Select this voice" to confirm
+
+The voice you pick is what the audio step uses for the final render.
+
+
+================================================================
+STEP 4: AUDIO
+================================================================
+
+The script is rendered with your chosen voice using ElevenLabs. The
+audio appears as a waveform you can play, pause, and click anywhere
+to seek.
+
+Two buttons:
+
+  Regenerate    — render a new take. ElevenLabs is non-deterministic
+                  so the same script with the same voice produces
+                  slight variations.
+
+  Approve       — lock in this audio. The Final Package view appears.
+
+
+================================================================
+FINAL PACKAGE
+================================================================
+
+After approving the audio, the Final Package view replaces the
+step view. You'll see:
+
+  Approved Copy    — headline, caption, CTA
+  Approved Image   — full size
+  Voiceover        — script text, voice name, waveform player
+  Director's Notes — a clean audit trail of every refinement and
+                     critique you applied across all four steps,
+                     in the order you made them
+
+At the top, two buttons:
+
+  Edit any step    — scrolls up to the stepper so you can click any
+                     approved step and revise. The Final Package
+                     re-renders once everything is re-approved.
+
+  Download package — produces a zip file containing:
+
+                         copy.txt           — the headline, caption,
+                                              and CTA as plain text
+                         image.{png|jpg}    — the approved image
+                         voiceover.mp3      — the audio file
+                         director-notes.md  — the same audit trail
+                                              as on screen, in
+                                              markdown form
+
+The zip is ready to hand off to a campaign manager, drop into an ad
+platform, or share with a teammate for review.
+
+
+================================================================
+BACKTRACKING (THE TOOL'S BEST TRICK)
+================================================================
+
+At any point, click any approved step in the stepper at the top of
+the screen. You'll be returned to that step with all your variants
+and choices intact. Re-pick a different variant, or refine again.
+
+When you re-approve and the chain rebuilds, you may see a small pill
+above the variant grid that reads:
+
+    "Restored from your earlier choices — no regeneration"
+
+This means the demo recognized you've already explored this exact
+path and is showing you the cached result rather than re-generating
+(and re-billing your API). Exploring multiple branches costs you
+only the first traversal of each branch.
+
+
+================================================================
+IF SOMETHING GOES WRONG
+================================================================
+
+The demo is built to recover gracefully from common issues. You'll
+see a calm error message, not a technical stack trace.
+
+  "Your X key isn't being accepted"
+      Open Settings and re-paste the key. Sometimes a stray space or
+      newline gets copied along with it. Click "Try again" after
+      pasting.
+
+  "X is busy. Try again in a few seconds."
+      The provider is rate-limiting briefly. Wait 10 seconds and
+      click "Try again."
+
+  "Couldn't reach X. Check your internet and try again."
+      A network blip. Click "Try again." If it persists, switch to
+      a different network briefly.
+
+  "This voice isn't available on your ElevenLabs account."
+      A "Pick a different voice" button appears below the error.
+      Click it to return to the voice picker, where you can choose
+      one of your account voices.
+
+  Anything else
+      A "Try again" button is always present. If repeated retries
+      fail, refresh the page and start over — your brief and most of
+      your variants will be restored from your browser's session
+      storage.
+
+
+================================================================
+PRIVACY AND COST
+================================================================
+
+Your API keys live only in your browser's session storage. They are
+never sent to any server other than the four service providers above
+(OpenAI, fal.ai, ElevenLabs, Anthropic). They clear when you close
+the browser tab.
+
+You pay your own provider for your own usage. A typical full run of
+all four steps with no refinements costs a small fraction of a
+dollar across all four providers combined. Heavy iteration with many
+refines pushes that to a few cents. The most expensive single call
+is the audio render (a few cents per take). Copy, image, and script
+generations are well under a cent each.
+
+The demo's owner does not see your keys, your brief, your variants,
+or your final assets. Everything happens in your browser.
+
+
+================================================================
+SUGGESTED FIRST RUN
+================================================================
+
+  1. Open the URL above.
+  2. Click "Try the sample brief instead" on the welcome screen.
+     Watch the full pipeline restore in under a second.
+  3. Click any approved step in the stepper. Try a refine like
+     "more aggressive, less corporate." Watch new variants render.
+  4. Open Settings, paste your four API keys, validate them.
+  5. Click "New brief" in the top right.
+  6. Fill in your own product, audience, and angle.
+  7. Walk through copy, image, script, voice, audio.
+  8. At the image step, try the Critique button on at least one
+     variant. Read the prose feedback. Apply it.
+  9. Approve audio.
+ 10. Click Download package on the Final Package view.
+
+Total time: about ten minutes. The zip will be in your downloads
+folder when you're done.
+
+
+================================================================
+QUESTIONS
+================================================================
+
+The demo is intentionally self-explanatory; everything you need to
+know is surfaced at the moment you need it. If you get stuck, the
+"Try again" button on any error gives you a path forward, and
+clicking any approved step in the stepper lets you backtrack
+without losing work.

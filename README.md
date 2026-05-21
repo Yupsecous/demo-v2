@@ -8,35 +8,6 @@ The user fills in a three-line brief (product, audience, ad angle) and walks thr
 
 After all four steps, a final package view assembles the assets along with a Director's Notes audit trail that summarises every refinement, critique, and pick. A download button packages the four assets into a zip file ready to hand off.
 
-## Stack
-
-Front end runtime
-
-- Vite 5 with React 18 in TypeScript strict mode
-- Tailwind CSS v4 via the dedicated Vite plugin
-- Zustand for state, split into settings, brief, and steps slices, combined in a single store
-
-Build tools
-
-- TypeScript 5
-- Vitest for unit tests
-- tsx for running Node scripts in TypeScript without a build step
-
-Browser libraries
-
-- wavesurfer.js for the audio waveform player on steps three and four
-- jszip for building the final download package
-- zod for runtime schema validation of every JSON response from the LLM endpoints
-
-External APIs called directly from the browser
-
-- OpenAI Chat Completions for script generation, image prompt builder, and the direction translator
-- Anthropic Messages for image critique with vision, and (optionally) for higher-quality copy generation via Claude Sonnet
-- fal.ai for Flux Schnell image generation
-- ElevenLabs for the final voice rendering
-
-No backend. No server-side proxy. All keys live in the visitor's browser sessionStorage. The demo opens directly from a static build.
-
 ## API keys
 
 Four providers are involved. The keys all go into the Settings drawer in the running app, never into source code or environment variables shipped to end users.
@@ -50,32 +21,6 @@ ElevenLabs. Used for the final voice render and for the optional voice-library p
 Anthropic. Two roles. Without it the Critique button on each image variant is disabled with an inline hint, and copy generation falls back to gpt-4o-mini. With it, copy generation routes through Claude Sonnet for noticeably higher-quality variants, and image critique is available. Get a key at https://console.anthropic.com/settings/keys.
 
 Keys live in the visitor's browser sessionStorage. They are cleared when the tab closes. They are not transmitted to any server other than the four providers above. They are not bundled into source code or environment variables shipped to end users. Every visitor enters their own keys. The demo owner does not pay for visitor usage.
-
-## Setup
-
-Clone the repository, install dependencies, run the dev server.
-
-```
-git clone https://github.com/Yupsecous/demo-v2.git
-cd demo-v2
-npm install
-npm run dev
-```
-
-The dev server prints a local URL. Open it in a browser. The first thing a visitor sees is the OnboardingState welcome card explaining the four keys; the Settings drawer auto-opens 600ms later. Once an OpenAI key is added, the brief form appears.
-
-## Available scripts
-
-```
-npm run dev            start the Vite dev server with HMR
-npm run build          produce a production build under dist
-npm run preview        serve the production build on 0.0.0.0 port 8080
-npm run typecheck      run tsc without emitting
-npm test               run the Vitest suite once
-npm run test:watch     run Vitest in watch mode
-npm run record-voices  generate the prerecorded voice tone samples (one-time)
-npm run bake-sample    bake a finished run into a static demo preset (one-time)
-```
 
 ## Onboarding and gating
 
@@ -285,7 +230,6 @@ Current coverage, 57 tests across four files:
 - src/store/steps.slice.test.ts covers the state machine architecture invariants from D7: isStepUnlocked gating (all locked before brief, only copy after submit, sequential cascade), activeStepId derivation, the cascade chain through all four steps to allApproved, downstream invalidation rules (selection change clears, first-time pick does not, same selection does not, voice change clears audio only), the append-vs-replace distinction, and reopenStep semantics for script versus other steps.
 
 Test fixtures live at src/test/fixtures.ts and provide a typed factory for building AppState test doubles. Use that factory rather than constructing state literals by hand — it keeps test setup short and isolates type changes to one file.
-
 ## Known limitations
 
 The deployed JavaScript bundle is readable. The translator system prompts, which are the only meaningful IP in this codebase, are visible to anyone who opens the network panel. For a one-to-one prospect demo this is fine. For wider sharing, Vercel Pro password-protected previews are the right answer.
