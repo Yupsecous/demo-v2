@@ -10,6 +10,7 @@
 export type ErrorCode =
   | 'openai/auth-failed'
   | 'openai/rate-limit'
+  | 'openai/insufficient-quota'
   | 'openai/network'
   | 'openai/bad-response'
   | 'openai/missing-key'
@@ -28,6 +29,7 @@ export type ErrorCode =
   | 'eleven/missing-key'
   | 'anthropic/auth-failed'
   | 'anthropic/rate-limit'
+  | 'anthropic/insufficient-quota'
   | 'anthropic/network'
   | 'anthropic/bad-response'
   | 'anthropic/missing-key'
@@ -50,6 +52,11 @@ const MESSAGES: Record<ErrorCode, ErrorEntry> = {
   },
   'openai/rate-limit': {
     message: 'OpenAI is busy. Try again in a few seconds.',
+  },
+  'openai/insufficient-quota': {
+    message:
+      "Your OpenAI account is out of credits. Open platform.openai.com/account/billing and top up, or switch to a key on a funded account.",
+    pointToSettings: true,
   },
   'openai/network': {
     message: "Couldn't reach OpenAI. Check your internet and try again.",
@@ -112,6 +119,11 @@ const MESSAGES: Record<ErrorCode, ErrorEntry> = {
   },
   'anthropic/rate-limit': {
     message: 'Anthropic is busy. Wait a moment and try again.',
+  },
+  'anthropic/insufficient-quota': {
+    message:
+      "Your Anthropic account is out of credits. Open console.anthropic.com and top up, or switch to a key on a funded account.",
+    pointToSettings: true,
   },
   'anthropic/network': {
     message: "Couldn't reach Anthropic. Check your internet and try again.",

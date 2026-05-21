@@ -55,7 +55,22 @@ export async function chatCompletionsJson(args: ChatCompletionsJsonArgs): Promis
     const text = await res.text().catch(() => '');
     const snippet = text.slice(0, 300);
     if (res.status === 401) throw new AppError('openai/auth-failed', snippet);
-    if (res.status === 429) throw new AppError('openai/rate-limit', snippet);
+    if (res.status === 429) {
+      // OpenAI uses 429 for both transient rate-limits AND for exhausted
+      // billing quota. Distinguish via the error.type field — quota
+      // exhaustion is persistent and a retry will only frustrate the user.
+      try {
+        const body = JSON.parse(text) as { error?: { type?: string; code?: string } };
+        const t = body.error?.type ?? '';
+        if (t === 'insufficient_quota' || body.error?.code === 'insufficient_quota') {
+          throw new AppError('openai/insufficient-quota', snippet);
+        }
+      } catch (e) {
+        if (e instanceof AppError) throw e;
+        // body wasn't JSON; fall through to rate-limit
+      }
+      throw new AppError('openai/rate-limit', snippet);
+    }
     throw new AppError('openai/bad-response', `status ${res.status}: ${snippet}`);
   }
 

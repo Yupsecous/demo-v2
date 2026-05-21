@@ -68,14 +68,33 @@ export async function messagesJson(args: MessagesJsonArgs): Promise<unknown> {
   }
 
   if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    const snippet = text.slice(0, 300);
     if (res.status === 401 || res.status === 403) {
-      throw new AppError('anthropic/auth-failed', `status ${res.status}`);
+      throw new AppError('anthropic/auth-failed', `status ${res.status}: ${snippet}`);
     }
     if (res.status === 429) {
-      throw new AppError('anthropic/rate-limit');
+      // Anthropic uses 429 for transient rate-limits and for credit
+      // exhaustion. The body's error.type carries the distinction.
+      try {
+        const body = JSON.parse(text) as {
+          error?: { type?: string; message?: string };
+        };
+        const t = body.error?.type ?? '';
+        const msg = body.error?.message ?? '';
+        if (
+          t === 'credit_balance_too_low' ||
+          /credit balance/i.test(msg) ||
+          /insufficient/i.test(msg)
+        ) {
+          throw new AppError('anthropic/insufficient-quota', snippet);
+        }
+      } catch (e) {
+        if (e instanceof AppError) throw e;
+      }
+      throw new AppError('anthropic/rate-limit', snippet);
     }
-    const text = await res.text().catch(() => '');
-    throw new AppError('anthropic/bad-response', `status ${res.status}: ${text.slice(0, 200)}`);
+    throw new AppError('anthropic/bad-response', `status ${res.status}: ${snippet}`);
   }
 
   let body: AnthropicMessageResponse;
