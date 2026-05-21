@@ -251,6 +251,34 @@ describe('appendVariants vs replaceVariants', () => {
     expect(store.getState().steps.script.variants.length).toBe(0);
   });
 
+  it('revertVoicePick clears voice and audio working state, keeps script pick', () => {
+    // Build a fully-approved state through audio for this test.
+    // Set all three brief fields so submitBrief() actually flips
+    // briefSubmitted and activeStepId derives correctly.
+    store.getState().setBriefField('targetAudience', 'A');
+    store.getState().setBriefField('adAngle', 'X');
+    setup();
+    store.getState().pickVariant('script', 0);
+    store.getState().setVoiceId('script', 'brian');
+    store.getState().appendVariants('audio', [audioVariant()]);
+
+    expect(store.getState().steps.script.selectedVoiceId).toBe('brian');
+    expect(store.getState().steps.script.selectedIndex).toBe(0);
+    expect(store.getState().steps.audio.variants.length).toBe(1);
+
+    store.getState().revertVoicePick();
+
+    const after = store.getState();
+    expect(after.steps.script.selectedVoiceId).toBeNull();
+    expect(after.steps.script.selectedIndex).toBe(0); // script pick preserved
+    expect(after.steps.script.status).toBe('options');
+    expect(after.steps.audio.variants.length).toBe(0);
+    expect(after.steps.audio.selectedIndex).toBeNull();
+    expect(after.steps.audio.status).toBe('pending');
+    // activeStepId should now be 'script' (Phase B — selectedIndex set, no voice)
+    expect(activeStepId(after)).toBe('script');
+  });
+
   it('replaceVariants clears the step\'s own critiques', () => {
     setup();
     store.getState().setCritique('image', 'img-1', {

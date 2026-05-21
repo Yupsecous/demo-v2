@@ -5,6 +5,7 @@ import { computeStepHash } from '../services/stepHash';
 import { VoicePicker } from './VoicePicker';
 import { CacheRestorePill } from './CacheRestorePill';
 import { InlineError } from './InlineError';
+import { BackButton } from './BackButton';
 import { resolveVoice } from '../data/voiceLibrary';
 import {
   copyVariantsOf,
@@ -314,10 +315,6 @@ export function ScriptStep() {
   const scriptPicked = step.selectedIndex !== null;
   const phaseB = scriptPicked && variants.length > 0;
 
-  function handleChangeScript() {
-    reopenStep('script');
-  }
-
   function handleVoiceSelect(voiceId: string, voiceName: string) {
     setVoiceId('script', voiceId);
     addHistoryEntry('script', makeVoicePickEntry(voiceId, voiceName));
@@ -325,6 +322,13 @@ export function ScriptStep() {
 
   return (
     <section className="space-y-5">
+      <div>
+        <BackButton
+          label={phaseB ? 'Back to script picker' : 'Back to image'}
+          onClick={() => (phaseB ? reopenStep('script') : reopenStep('image'))}
+          disabled={loading !== null}
+        />
+      </div>
       <header className="flex items-baseline justify-between">
         <div>
           <h2 className="text-lg font-semibold tracking-tight">Script</h2>
@@ -351,17 +355,8 @@ export function ScriptStep() {
 
       {phaseB ? (
         <>
-          <div className="flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-900">
-            <span>
-              <span className="font-medium">Script picked.</span> Now pick a voice tone.
-            </span>
-            <button
-              type="button"
-              onClick={handleChangeScript}
-              className="text-xs font-medium text-emerald-800 underline-offset-2 hover:underline"
-            >
-              ← change script
-            </button>
+          <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-900">
+            <span className="font-medium">Script picked.</span> Now pick a voice tone.
           </div>
 
           {step.selectedVoiceId && (

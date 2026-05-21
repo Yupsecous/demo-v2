@@ -5,6 +5,7 @@ import { critiqueImage } from '../services/critiqueService';
 import { computeStepHash } from '../services/stepHash';
 import { CacheRestorePill } from './CacheRestorePill';
 import { InlineError } from './InlineError';
+import { BackButton } from './BackButton';
 import {
   copyVariantsOf,
   imageVariantsOf,
@@ -306,6 +307,7 @@ export function ImageStep() {
   const setCritique = useAppStore((s) => s.setCritique);
   const pickVariant = useAppStore((s) => s.pickVariant);
   const restoreFromCache = useAppStore((s) => s.restoreFromCache);
+  const reopenStep = useAppStore((s) => s.reopenStep);
   const openDrawer = useAppStore((s) => s.openDrawer);
 
   const variants = imageVariantsOf(step.variants);
@@ -453,6 +455,9 @@ export function ImageStep() {
 
   return (
     <section className="space-y-5">
+      <div>
+        <BackButton label="Back to copy" onClick={() => reopenStep('copy')} disabled={loading !== null} />
+      </div>
       <header className="flex items-baseline justify-between">
         <div>
           <h2 className="text-lg font-semibold tracking-tight">Image</h2>

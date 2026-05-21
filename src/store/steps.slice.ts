@@ -30,6 +30,7 @@ export type StepsSlice = {
   reopenStep: (id: StepId) => void;
   pickVariant: (id: StepId, index: number) => void;
   setVoiceId: (id: StepId, voiceId: string) => void;
+  revertVoicePick: () => void;
   restoreFromCache: (id: StepId, hash: string) => boolean;
   resetSteps: () => void;
   beginFirstStep: () => void;
@@ -221,6 +222,34 @@ export const createStepsSlice: StateCreator<FullState, [], [], StepsSlice> = (se
 
       const nextCache = writeCache(s.variantCache, { ...s, steps: nextSteps }, id);
       return { steps: nextSteps, variantCache: nextCache };
+    }),
+
+  // Targeted undo for "back from audio step": clears the voice pick on
+  // script and resets audio's working state. Script's selectedIndex is
+  // preserved (the user keeps their script choice), so the user lands
+  // back in script step Phase B (the voice picker). Audio's variants
+  // are cleared from the live state but the cache still holds them, so
+  // picking the same voice again restores the audio instantly.
+  revertVoicePick: () =>
+    set((s) => {
+      const scriptStep = s.steps.script;
+      const audioStep = s.steps.audio;
+      return {
+        steps: {
+          ...s.steps,
+          script: {
+            ...scriptStep,
+            selectedVoiceId: null,
+            status: scriptStep.variants.length > 0 ? 'options' : 'pending',
+          },
+          audio: {
+            ...audioStep,
+            variants: [],
+            selectedIndex: null,
+            status: 'pending',
+          },
+        },
+      };
     }),
 
   restoreFromCache: (id, hash) => {

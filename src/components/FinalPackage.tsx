@@ -3,6 +3,7 @@ import { useAppStore } from '../store';
 import { downloadPackage } from '../services/exportService';
 import { WaveformPlayer } from './WaveformPlayer';
 import { DirectorsNotes } from './DirectorsNotes';
+import { BackButton } from './BackButton';
 import { resolveVoice } from '../data/voiceLibrary';
 import {
   audioVariantsOf,
@@ -17,6 +18,7 @@ function scrollToStepper() {
 
 export function FinalPackage() {
   const state = useAppStore();
+  const reopenStep = useAppStore((s) => s.reopenStep);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [downloadWarning, setDownloadWarning] = useState<string | null>(null);
@@ -56,6 +58,9 @@ export function FinalPackage() {
 
   return (
     <article className="space-y-8">
+      <div>
+        <BackButton label="Back to audio" onClick={() => reopenStep('audio')} />
+      </div>
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-success-700">Approved</p>

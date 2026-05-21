@@ -10,6 +10,7 @@ import {
 import { WaveformPlayer } from './WaveformPlayer';
 import { CacheRestorePill } from './CacheRestorePill';
 import { InlineError } from './InlineError';
+import { BackButton } from './BackButton';
 import { AppError, isAppError } from '../services/errorMessages';
 import { resolveVoice } from '../data/voiceLibrary';
 import {
@@ -82,6 +83,7 @@ export function AudioStep() {
   const pickVariant = useAppStore((s) => s.pickVariant);
   const restoreFromCache = useAppStore((s) => s.restoreFromCache);
   const reopenStep = useAppStore((s) => s.reopenStep);
+  const revertVoicePick = useAppStore((s) => s.revertVoicePick);
   const openDrawer = useAppStore((s) => s.openDrawer);
 
   const variants = audioVariantsOf(step.variants);
@@ -252,6 +254,13 @@ export function AudioStep() {
 
   return (
     <section className="space-y-5">
+      <div>
+        <BackButton
+          label="Back to voice picker"
+          onClick={() => revertVoicePick()}
+          disabled={isGenerating}
+        />
+      </div>
       <header className="flex items-baseline justify-between">
         <div>
           <h2 className="text-lg font-semibold tracking-tight">Audio</h2>
